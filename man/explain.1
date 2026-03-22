@@ -63,8 +63,8 @@ Escribe la salida cruda completa en el error estándar antes del resumen.
 .B \-\-full
 Formato de salida extendido; por defecto se usa un formato compacto.
 .TP
-.B \-\-warnings
-Incluye advertencias del compilador al buscar coincidencias.
+.BR \-nw ", " \-\-no\-warnings
+Omite advertencias: no lista bloques explicados ni líneas con \fBwarning\fR. Por defecto los errores van primero y las advertencias en sección aparte.
 .TP
 .BI \-\-max\-warnings " N"
 Máximo de líneas de warning a listar (default: 5).
@@ -72,9 +72,11 @@ Máximo de líneas de warning a listar (default: 5).
 .BI \-\-shell " CMD"
 Ejecuta
 .I CMD
-con
-.BR sh \-c ;
-útil para pipelines dentro del comando.
+con el shell del sistema (\fBshell=True\fR; en Unix suele ser
+.BR sh ,
+en Windows
+.BR cmd ).
+Útil para pipelines dentro del comando.
 .SH EJEMPLOS
 .TP
 explain make kernel.c
@@ -85,6 +87,8 @@ Solo las entradas relacionadas con la subcadena
 .IR backup ,
 con el bloque completo (no hace falta
 .BR grep ).
+En terminal, la subcadena se resalta en rojo salvo
+.BR NO_COLOR .
 .TP
 explain gcc \-Wall main.c \-o main
 .TP

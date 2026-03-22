@@ -6,6 +6,7 @@ explain — explicador determinista de errores de build/ejecución (español, si
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -14,6 +15,7 @@ from typing import Iterable, Optional
 
 from explain import __author__, __version__
 from explain.extract import Location, enrich_locations, match_text_for_patterns
+from explain.pattern_index import get_pattern_index
 from explain.patterns import bases_por_lenguaje
 
 # Rutas tipo dir/archivo.ext o ./foo.c (evita ruido tipo "1.2.3")
@@ -242,13 +244,6 @@ def recopilar_errores_sin_patron(texto: str, lineas_explicadas: set[str]) -> lis
     return out
 
 
-def buscar_patron(texto: str, base: dict) -> Optional[tuple[str, dict]]:
-    for patron, info in base.items():
-        if re.search(patron, texto, re.IGNORECASE | re.DOTALL):
-            return patron, info
-    return None
-
-
 def formato_ubicacion(loc: Optional[Location]) -> str:
     if not loc:
         return ""
@@ -271,17 +266,31 @@ def formato_ubicacion(loc: Optional[Location]) -> str:
     return ":".join(parts)
 
 
+def _severidad_final(loc: Optional[Location], full_line: str) -> str:
+    sev = (loc.severity if loc else None) or ""
+    if sev:
+        return sev
+    low = full_line.lower()
+    if "warning" in low:
+        return "warning"
+    if "error" in low:
+        return "error"
+    return ""
+
+
 def analizar(
     output: str,
     lenguaje: str,
     *,
     incluir_warnings: bool,
-) -> tuple[list[dict], list[str]]:
+) -> tuple[list[dict], list[dict], list[str]]:
     base = obtener_base(lenguaje)
+    index = get_pattern_index(base) if base else None
     lineas = output.splitlines()
     enriched = enrich_locations(lineas)
 
-    hallazgos: list[dict] = []
+    errores: list[dict] = []
+    warnings_patron: list[dict] = []
     vistos: set[tuple] = set()
     warnings_lines: list[str] = []
 
@@ -292,16 +301,16 @@ def analizar(
                 warnings_lines.append(stripped)
 
         match_src = match_text_for_patterns(loc, full_line)
-        hit = buscar_patron(match_src, base)
-        if hit is None and match_src.strip() != stripped:
-            hit = buscar_patron(stripped, base)
+        hit = index.match(match_src) if index else None
+        if hit is None and match_src.strip() != stripped and index:
+            hit = index.match(stripped)
 
         if hit is None:
             continue
 
         patron, info = hit
-        sev = (loc.severity if loc else None) or ""
-        if sev.lower() == "warning" and not incluir_warnings:
+        sev_raw = (loc.severity if loc else None) or ""
+        if sev_raw.lower() == "warning" and not incluir_warnings:
             continue
 
         key = (patron, formato_ubicacion(loc), info.get("titulo"), stripped[:240])
@@ -309,18 +318,26 @@ def analizar(
             continue
         vistos.add(key)
 
-        hallazgos.append(
-            {
-                "linea_original": stripped,
-                "ubicacion": formato_ubicacion(loc) or None,
-                "simbolo": loc.symbol if loc else None,
-                "info": info,
-                "patron": patron,
-                "severidad": sev or ("error" if "error" in full_line.lower() else ""),
-            }
-        )
+        severidad = _severidad_final(loc, full_line)
+        item = {
+            "linea_original": stripped,
+            "ubicacion": formato_ubicacion(loc) or None,
+            "simbolo": loc.symbol if loc else None,
+            "info": info,
+            "patron": patron,
+            "severidad": severidad,
+        }
+        if severidad.lower() == "warning":
+            if not incluir_warnings:
+                continue
+            warnings_patron.append(item)
+        else:
+            errores.append(item)
 
-    return hallazgos, warnings_lines
+    ya_explicada_warn = {w["linea_original"] for w in warnings_patron}
+    warnings_lines = [w for w in warnings_lines if w not in ya_explicada_warn]
+
+    return errores, warnings_patron, warnings_lines
 
 
 def _error_coincide_match(err: dict, needle: str) -> bool:
@@ -340,15 +357,109 @@ def _error_coincide_match(err: dict, needle: str) -> bool:
 
 def filtrar_por_match(
     errores: list[dict],
+    warnings_patron: list[dict],
     warnings: list[str],
     match: Optional[str],
-) -> tuple[list[dict], list[str]]:
+) -> tuple[list[dict], list[dict], list[str]]:
     if not match or not match.strip():
-        return errores, warnings
+        return errores, warnings_patron, warnings
     n = match.strip()
     err_f = [e for e in errores if _error_coincide_match(e, n)]
+    wp_f = [e for e in warnings_patron if _error_coincide_match(e, n)]
     warn_f = [w for w in warnings if n.lower() in w.lower()]
-    return err_f, warn_f
+    return err_f, wp_f, warn_f
+
+
+_RED = "\033[31m"
+_RST = "\033[0m"
+
+
+def resaltar_subcadena(texto: str, needle: str, activo: bool) -> str:
+    """Resalta todas las apariciones de needle (sin distinguir mayúsculas) en rojo, estilo grep."""
+    if not activo or not needle or not texto:
+        return texto
+    if os.environ.get("NO_COLOR", "").strip():
+        return texto
+    low_t, low_n = texto.lower(), needle.lower()
+    if not low_n:
+        return texto
+    nlen = len(needle)
+    parts: list[str] = []
+    i = 0
+    while i < len(texto):
+        j = low_t.find(low_n, i)
+        if j < 0:
+            parts.append(texto[i:])
+            break
+        parts.append(texto[i:j])
+        parts.append(_RED + texto[j : j + nlen] + _RST)
+        i = j + nlen
+    return "".join(parts)
+
+
+def _lineas_item_compacto(err: dict, idx: int, needle: str, colorear: bool) -> list[str]:
+    """Un bloque numerado en modo compacto (error o advertencia explicada por patrón)."""
+    out: list[str] = []
+    titulo = err["info"]["titulo"]
+    ub = err["ubicacion"]
+    sym = err.get("simbolo")
+    donde: list[str] = []
+    if ub:
+        donde.append(f"archivo:línea → {resaltar_subcadena(str(ub), needle, colorear)}")
+    if sym:
+        donde.append(f"función/módulo → {resaltar_subcadena(str(sym), needle, colorear)}")
+    out.append(f"{idx}. {resaltar_subcadena(titulo, needle, colorear)}")
+    if donde:
+        out.append("   " + "  |  ".join(donde))
+    linea_e = resaltar_subcadena(err["linea_original"], needle, colorear)
+    sev = (err.get("severidad") or "error").lower()
+    etiqueta = "warning" if sev == "warning" else "error"
+    out.append(f"   {etiqueta}: {linea_e}")
+    out.append("   por qué:")
+    for ln in err["info"]["explicacion"].strip().split("\n"):
+        if ln.strip():
+            out.append(f"     {ln.strip()}")
+    out.append("   qué hacer:")
+    for sol in err["info"]["soluciones"]:
+        out.append(f"     · {sol}")
+    out.append("")
+    return out
+
+
+def _lineas_item_full(
+    err: dict, idx: int, needle: str, colorear: bool, *, prefijo: str
+) -> list[str]:
+    sep = "━" * 60
+    out: list[str] = []
+    titulo = err["info"]["titulo"]
+    ub = err["ubicacion"]
+    cabecera = f"{prefijo} #{idx}: {resaltar_subcadena(titulo, needle, colorear)}"
+    if ub:
+        cabecera = (
+            f"{prefijo} en {resaltar_subcadena(str(ub), needle, colorear)}: "
+            f"{resaltar_subcadena(titulo, needle, colorear)}"
+        )
+    out.append(cabecera)
+    out.append(sep)
+    out.append("")
+    out.append("  Mensaje original:")
+    msg_q = resaltar_subcadena(err["linea_original"], needle, colorear)
+    out.append(f'    "{msg_q}"')
+    if err.get("simbolo"):
+        sm = resaltar_subcadena(str(err["simbolo"]), needle, colorear)
+        out.append(f"  Contexto: función/módulo `{sm}`")
+    out.append("")
+    out.append("  Explicación:")
+    for ln in err["info"]["explicacion"].strip().split("\n"):
+        out.append(f"    {ln.strip()}")
+    out.append("")
+    out.append("  Qué hacer:")
+    for sol in err["info"]["soluciones"]:
+        out.append(f"    - {sol}")
+    out.append("")
+    out.append(sep)
+    out.append("")
+    return out
 
 
 def _append_bloques_desconocidos(
@@ -356,6 +467,9 @@ def _append_bloques_desconocidos(
     desconocidos: list[str],
     offset: int,
     compacto: bool,
+    *,
+    resaltar_needle: Optional[str] = None,
+    colorear: bool = False,
 ) -> None:
     if not desconocidos:
         return
@@ -363,7 +477,8 @@ def _append_bloques_desconocidos(
         out.append("─── Errores sin entrada en la base (desconocidos) ───")
         for i, ln in enumerate(desconocidos, 1):
             out.append(f"{offset + i}. desconocido")
-            out.append(f"   mensaje: {ln}")
+            msg = resaltar_subcadena(ln, resaltar_needle or "", colorear)
+            out.append(f"   mensaje: {msg}")
             out.append(
                 "   hint: Ampliá explain/patterns/ del lenguaje o pasá el texto a la documentación del compilador."
             )
@@ -376,38 +491,43 @@ def _append_bloques_desconocidos(
         out.append("")
         for i, ln in enumerate(desconocidos, 1):
             out.append(f"DESCONOCIDO #{offset + i}")
-            out.append(f"  {ln}")
+            out.append(f"  {resaltar_subcadena(ln, resaltar_needle or '', colorear)}")
             out.append("")
 
 
 def formatear_salida(
     errores: list[dict],
+    warnings_patron: list[dict],
     warnings: list[str],
     lenguaje: str,
     *,
     max_warnings: int,
     compacto: bool,
     linea_cruda_sin_patron: Optional[str] = None,
-    filtro_match_vacio: Optional[tuple[int, int, str]] = None,
+    filtro_match_vacio: Optional[tuple[int, int, int, str]] = None,
     desconocidos: Optional[list[str]] = None,
+    resaltar_needle: Optional[str] = None,
+    colorear: bool = False,
 ) -> str:
     out: list[str] = []
     sep = "━" * 60
     desconocidos = desconocidos or []
 
-    if not errores and not warnings and not desconocidos:
+    if not errores and not warnings_patron and not warnings and not desconocidos:
         out.append(f"(explain · {lenguaje})")
         out.append("")
         if filtro_match_vacio is not None:
-            n_err, n_warn, filtro = filtro_match_vacio
+            n_err, n_wp, n_wl, filtro = filtro_match_vacio
             partes = []
             if n_err:
                 partes.append(f"{n_err} error(es)")
-            if n_warn:
-                partes.append(f"{n_warn} warning(s)")
+            if n_wp:
+                partes.append(f"{n_wp} advertencia(s) explicada(s)")
+            if n_wl:
+                partes.append(f"{n_wl} línea(s) con warning")
             out.append(
                 f"Ninguna entrada coincide con --match {filtro!r} "
-                f"({', '.join(partes)} tenían explicación y se omitieron)."
+                f"({', '.join(partes)} tenían explicación o listado y se omitieron)."
             )
             out.append("Quitá -m/--match para ver todos.")
             out.append("")
@@ -416,89 +536,87 @@ def formatear_salida(
             out.append("No hay una entrada en la base para este mensaje (mostrando una línea típica):")
             out.append(f"  {linea_cruda_sin_patron}")
             out.append("")
-        out.append("No se encontraron patrones conocidos. Ampliá explain/patterns.py o usá -v para ver todo el log.")
+        out.append(
+            "No se encontraron patrones conocidos. Ampliá explain/patterns/ o usá -v para ver todo el log."
+        )
         return "\n".join(out) + "\n"
+
+    needle = resaltar_needle or ""
+
+    n_explicados = len(errores) + len(warnings_patron)
 
     if compacto:
         out.append(f"(explain · {lenguaje})")
         out.append("─" * 52)
-        for idx, err in enumerate(errores, 1):
-            titulo = err["info"]["titulo"]
-            ub = err["ubicacion"]
-            sym = err.get("simbolo")
-            donde: list[str] = []
-            if ub:
-                donde.append(f"archivo:línea → {ub}")
-            if sym:
-                donde.append(f"función/módulo → {sym}")
-            out.append(f"{idx}. {titulo}")
-            if donde:
-                out.append("   " + "  |  ".join(donde))
-            out.append(f'   error: {err["linea_original"]}')
-            out.append("   por qué:")
-            for ln in err["info"]["explicacion"].strip().split("\n"):
-                if ln.strip():
-                    out.append(f"     {ln.strip()}")
-            out.append("   qué hacer:")
-            for sol in err["info"]["soluciones"]:
-                out.append(f"     · {sol}")
-            out.append("")
+        if errores:
+            if warnings_patron:
+                out.append("─── Errores ───")
+            for idx, err in enumerate(errores, 1):
+                out.extend(_lineas_item_compacto(err, idx, needle, colorear))
+        if warnings_patron:
+            out.append("─── Advertencias ───")
+            for idx, err in enumerate(warnings_patron, 1):
+                out.extend(_lineas_item_compacto(err, idx, needle, colorear))
         if warnings:
-            out.append(f"(warnings detectados: {len(warnings)}, mostrando hasta {max_warnings})")
+            out.append(
+                f"(otras líneas con warning: {len(warnings)}, mostrando hasta {max_warnings})"
+            )
             for w in warnings[:max_warnings]:
-                out.append(f"  · {w}")
+                out.append(f"  · {resaltar_subcadena(w, needle, colorear)}")
             if len(warnings) > max_warnings:
                 out.append(f"  · … y {len(warnings) - max_warnings} más")
-        _append_bloques_desconocidos(out, desconocidos, len(errores), compacto=True)
+        _append_bloques_desconocidos(
+            out,
+            desconocidos,
+            n_explicados,
+            compacto=True,
+            resaltar_needle=needle or None,
+            colorear=colorear,
+        )
         return "\n".join(out).rstrip() + "\n"
 
-    out.append(sep)
-    out.append(f"EXPLICACIÓN DE ERRORES ({lenguaje})")
-    out.append(sep)
-    out.append("")
+    if errores:
+        out.append(sep)
+        out.append(f"ERRORES ({lenguaje})")
+        out.append(sep)
+        out.append("")
+        for idx, err in enumerate(errores, 1):
+            out.extend(_lineas_item_full(err, idx, needle, colorear, prefijo="ERROR"))
 
-    for idx, err in enumerate(errores, 1):
-        titulo = err["info"]["titulo"]
-        ub = err["ubicacion"]
-        cabecera = f"ERROR #{idx}: {titulo}"
-        if ub:
-            cabecera = f"ERROR en {ub}: {titulo}"
-        out.append(cabecera)
+    if warnings_patron:
+        out.append(sep)
+        out.append(f"ADVERTENCIAS EXPLICADAS ({lenguaje})")
         out.append(sep)
         out.append("")
-        out.append("  Mensaje original:")
-        out.append(f'    "{err["linea_original"]}"')
-        if err.get("simbolo"):
-            out.append(f"  Contexto: función/módulo `{err['simbolo']}`")
-        out.append("")
-        out.append("  Explicación:")
-        for ln in err["info"]["explicacion"].strip().split("\n"):
-            out.append(f"    {ln.strip()}")
-        out.append("")
-        out.append("  Qué hacer:")
-        for sol in err["info"]["soluciones"]:
-            out.append(f"    - {sol}")
-        out.append("")
-        out.append(sep)
-        out.append("")
+        for idx, err in enumerate(warnings_patron, 1):
+            out.extend(_lineas_item_full(err, idx, needle, colorear, prefijo="WARNING"))
 
     if warnings:
-        out.append(f"WARNINGS detectados: {len(warnings)}")
+        out.append(sep)
+        out.append(f"OTRAS LÍNEAS CON WARNING: {len(warnings)}")
         out.append(sep)
         for w in warnings[:max_warnings]:
-            out.append(f"  {w}")
+            out.append(f"  {resaltar_subcadena(w, needle, colorear)}")
         if len(warnings) > max_warnings:
             out.append(f"  ... y {len(warnings) - max_warnings} más")
         out.append("")
 
-    _append_bloques_desconocidos(out, desconocidos, len(errores), compacto=False)
+    _append_bloques_desconocidos(
+        out,
+        desconocidos,
+        n_explicados,
+        compacto=False,
+        resaltar_needle=needle or None,
+        colorear=colorear,
+    )
 
     out.append(sep)
     out.append("RESUMEN")
     out.append(sep)
-    out.append(f"Patrones explicados: {len(errores)}")
+    out.append(f"Errores explicados: {len(errores)}")
+    out.append(f"Advertencias explicadas: {len(warnings_patron)}")
     out.append(f"Desconocidos listados: {len(desconocidos)}")
-    out.append(f"Warnings listados: {len(warnings)}")
+    out.append(f"Líneas warning listadas: {len(warnings)}")
     return "\n".join(out) + "\n"
 
 
@@ -542,13 +660,16 @@ Por defecto solo imprime las explicaciones de los errores que matchean la base (
 Usá -v para volcar el log completo en stderr. Con tubería, el resumen sigue en stdout:
   make iv 2>&1 | explain > resumen.txt
 
-Filtrar entradas completas (mejor que grep, que corta "por qué" / "qué hacer"):
+Filtrar entradas completas (mejor que grep, que corta "por qué" / "qué hacer");
+  en terminal, -m resalta TEXTO en rojo (respeta NO_COLOR=1):
   explain make iv -m backup
 
 --lang auto: comando (gcc, python3, …), rutas en los argumentos (make script.py), extensiones
 en la salida, formato del mensaje; si no hay señal, C.
 
 --full: formato largo con separadores. Por defecto: salida compacta.
+
+-nw / --no-warnings: sin advertencias (solo errores y desconocidos si aplican).
         """.strip(),
     )
     p.add_argument(
@@ -574,10 +695,13 @@ en la salida, formato del mensaje; si no hay señal, C.
         action="store_true",
         help="Formato de salida extendido (por defecto: compacto, solo lo que aplica a tus errores)",
     )
+    p.set_defaults(incluir_warnings=True)
     p.add_argument(
-        "--warnings",
-        action="store_true",
-        help="Incluir líneas warning al matchear patrones (por defecto solo mensajes útiles)",
+        "-nw",
+        "--no-warnings",
+        action="store_false",
+        dest="incluir_warnings",
+        help="No mostrar advertencias (ni explicadas ni listado de líneas warning).",
     )
     p.add_argument(
         "--max-warnings",
@@ -596,7 +720,7 @@ en la salida, formato del mensaje; si no hay señal, C.
         "--shell",
         metavar="CMD",
         default=None,
-        help="Ejecutar CMD con shell=True (una cadena; captura stdout y stderr)",
+        help="Ejecutar CMD con shell del sistema (Unix: sh; Windows: cmd); captura stdout+stderr",
     )
     return p
 
@@ -653,18 +777,28 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         if lang == "Desconocido":
             lang = "C"
 
-    errores, warns = analizar(
-        texto,
-        lang,
-        incluir_warnings=bool(args.warnings),
+    errores, warns_patron, warns_lineas = analizar(
+        texto, lang, incluir_warnings=bool(args.incluir_warnings)
     )
 
-    lineas_explicadas = {e["linea_original"] for e in errores}
+    match_txt = args.match.strip() if args.match and args.match.strip() else None
+    colorear = bool(
+        match_txt
+        and sys.stdout.isatty()
+        and not os.environ.get("NO_COLOR", "").strip()
+    )
+
+    lineas_explicadas = {e["linea_original"] for e in errores} | {
+        e["linea_original"] for e in warns_patron
+    }
     desconocidos_full = recopilar_errores_sin_patron(texto, lineas_explicadas)
 
     errores_antes_filtro = len(errores)
-    warns_antes_filtro = len(warns)
-    errores, warns = filtrar_por_match(errores, warns, args.match)
+    warns_patron_antes_filtro = len(warns_patron)
+    warns_lineas_antes_filtro = len(warns_lineas)
+    errores, warns_patron, warns_lineas = filtrar_por_match(
+        errores, warns_patron, warns_lineas, args.match
+    )
 
     if args.match and args.match.strip():
         needle = args.match.strip().lower()
@@ -673,23 +807,31 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         desconocidos = desconocidos_full
 
     sin_patron = None
-    filtro_match_vacio: Optional[tuple[int, int, str]] = None
+    filtro_match_vacio: Optional[tuple[int, int, int, str]] = None
     if (
         args.match
         and args.match.strip()
         and not errores
-        and not warns
+        and not warns_patron
+        and not warns_lineas
         and not desconocidos
-        and (errores_antes_filtro > 0 or warns_antes_filtro > 0 or len(desconocidos_full) > 0)
+        and (
+            errores_antes_filtro > 0
+            or warns_patron_antes_filtro > 0
+            or warns_lineas_antes_filtro > 0
+            or len(desconocidos_full) > 0
+        )
     ):
         filtro_match_vacio = (
             errores_antes_filtro,
-            warns_antes_filtro,
+            warns_patron_antes_filtro,
+            warns_lineas_antes_filtro,
             args.match.strip(),
         )
     elif (
         errores_antes_filtro == 0
-        and warns_antes_filtro == 0
+        and warns_patron_antes_filtro == 0
+        and warns_lineas_antes_filtro == 0
         and len(desconocidos_full) == 0
     ):
         sin_patron = primera_linea_con_error(texto)
@@ -704,13 +846,16 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
     print(
         formatear_salida(
             errores,
-            warns,
+            warns_patron,
+            warns_lineas,
             lang,
             max_warnings=args.max_warnings,
             compacto=not args.full,
             linea_cruda_sin_patron=sin_patron,
             filtro_match_vacio=filtro_match_vacio,
             desconocidos=desconocidos,
+            resaltar_needle=match_txt,
+            colorear=colorear,
         ).rstrip("\n"),
     )
 
