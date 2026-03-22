@@ -41,4 +41,14 @@ WARNINGS_RUST = {
         "explicacion": "Rust 2018+ prefiere Box<dyn Trait> en lugar de Box<Trait>.",
         "soluciones": ["Añade dyn delante del trait."],
     },
+    r"warning: unused import:": {
+        "titulo": "Import no usado (rustc)",
+        "explicacion": "Un use no se referencia en el módulo.",
+        "soluciones": ["Elimínalo", "#[allow(unused_imports)] solo si macro/generated"],
+    },
+    r"warning: unreachable pattern": {
+        "titulo": "Patrón inalcanzable en match",
+        "explicacion": "Un arm de match nunca se ejecuta porque otro lo cubre antes.",
+        "soluciones": ["Reordená arms", "Eliminá el patrón muerto"],
+    },
 }

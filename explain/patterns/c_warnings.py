@@ -61,6 +61,32 @@ WARNINGS_C = {
         "explicacion": "Accedes a la misma memoria con tipos puntero incompatibles; el optimizador puede asumir que no ocurre.",
         "soluciones": ["Usa memcpy para reinterpretar bytes, o union con cuidado y documentación."],
     },
+    r"warning:.*\[-Wsequence-point\]|warning:.*operation on .*may be undefined|warning:.*unsequenced|warning:.*multiple unsequenced": {
+        "titulo": "Posible UB: orden de evaluación (sequence points)",
+        "explicacion": "Dos efectos secundarios sobre la misma variable sin sequence point intermedio, o lecturas/escrituras sin orden definido: el estándar no define el resultado.",
+        "soluciones": [
+            "Separá en sentencias (variables temporales).",
+            "Evitá i++ en la misma expresión que otra modificación de i.",
+        ],
+    },
+    r"warning:.*undefined behavior|note:.*undefined behavior": {
+        "titulo": "Comportamiento indefinido (diagnóstico del compilador)",
+        "explicacion": "GCC/Clang marcan explícitamente un patrón que el estándar C no define; el programa puede hacer cualquier cosa en optimización.",
+        "soluciones": [
+            "Leé el mensaje completo y el estándar o cppreference para ese caso.",
+            "Simplificá la expresión; usá APIs seguras (memcpy, comprobaciones de rango).",
+        ],
+    },
+    r"warning:.*left shift of negative|warning:.*right shift of negative|warning:.*shift count >=|warning:.*shift count.*width|warning:.*negative.*shift": {
+        "titulo": "Desplazamiento inválido (UB en C)",
+        "explicacion": "Desplazar un signed negativo, o un recuento fuera de rango / ≥ ancho del tipo, es comportamiento indefinido en C.",
+        "soluciones": ["Usá unsigned para bits", "Acotá el shift con comprobación", "Evitá shifts en valores negativos"],
+    },
+    r"warning:.*dereferencing.*type-punned|type-punned pointer will break strict-aliasing": {
+        "titulo": "Type-punning y strict aliasing (riesgo de UB)",
+        "explicacion": "Se accede al mismo almacenamiento vía punteros de tipo distinto sin reglas permitidas; con optimización puede ser UB.",
+        "soluciones": ["memcpy entre representaciones", "char* para bytes", "union con cautela y compilador/documentación"],
+    },
     r"warning:.*overflow": {
         "titulo": "Posible desbordamiento aritmético",
         "explicacion": "Una operación puede desbordar el rango del tipo (signed overflow es UB en C).",
@@ -100,5 +126,50 @@ WARNINGS_C = {
         "titulo": "switch incompleto sobre enum",
         "explicacion": "No todos los valores del enum tienen case; si añades valores al enum, falta cubrirlos.",
         "soluciones": ["Añade los case faltantes o un default explícito (y -Wswitch-enum si quieres exhaustividad)."],
+    },
+    r"warning:.*pointer.*integer conversion|warning:.*integer.*pointer.*without a cast": {
+        "titulo": "Conversión puntero/entero (warning)",
+        "explicacion": "Se mezcla puntero y entero sin cast; puede romper en otra arquitectura o con ASan.",
+        "soluciones": ["uintptr_t", "Cast explícito y comentario si es hardware embebido"],
+    },
+    r"warning:.*missing prototype|warning:.*no previous prototype": {
+        "titulo": "Prototipo ausente (-Wmissing-prototypes)",
+        "explicacion": "Función global sin prototipo antes de la definición.",
+        "soluciones": ["Declaración en .h", "static si es interna al .c"],
+    },
+    r"warning:.*tautological|warning:.*self-comparison|warning:.*always true|warning:.*always false": {
+        "titulo": "Comparación tautológica",
+        "explicacion": "La condición es siempre verdadera o siempre falsa (typo o variable equivocada).",
+        "soluciones": ["Revisá == vs =", "Variable correcta en ambos lados"],
+    },
+    r"warning:.*implicit conversion.*precision|warning:.*conversion.*may change value": {
+        "titulo": "Conversión con pérdida de precisión",
+        "explicacion": "Se convierte a un tipo más estrecho y puede truncarse el valor.",
+        "soluciones": ["Cast explícito", "Tipo intermedio más ancho", "-Wconversion con criterio"],
+    },
+    r"warning:.*enum.*conversion|warning:.*enumeral.*mismatch": {
+        "titulo": "Conversión entre enums",
+        "explicacion": "Mezcla de tipos enum distintos o enum con entero sin intención clara.",
+        "soluciones": ["Cast al enum correcto", "Evitá mezclar enums de distintos orígenes"],
+    },
+    r"warning:.*unused label": {
+        "titulo": "Etiqueta no usada",
+        "explicacion": "Un label de goto o case residual no tiene referencias.",
+        "soluciones": ["Elimínala", "O usala / documentá si es para depuración"],
+    },
+    r"warning:.*typedef.*redefinition|warning:.*redefinition of typedef": {
+        "titulo": "typedef redefinido",
+        "explicacion": "Dos typedef del mismo nombre o conflicto entre headers.",
+        "soluciones": ["Include guards", "Un solo typedef canónico", "Prefijos en nombres"],
+    },
+    r"warning:.*\[-Wundef\]": {
+        "titulo": "Macro no definida en #if (-Wundef)",
+        "explicacion": "El preprocesador evalúa #if con un identificador que no está definido; con -Wundef es advertencia explícita.",
+        "soluciones": ["Usá defined(FEATURE)", "O #define antes del #if", "Documentá flags de configuración"],
+    },
+    r"warning:.*\[-Wconversion\]|warning:.*\[-Wfloat-conversion\]": {
+        "titulo": "Conversión que puede cambiar el valor (-Wconversion)",
+        "explicacion": "Pérdida de rango o cambio signed/unsigned implícito; en fronteras numéricas puede acabar en valores imposibles o UB indirecto.",
+        "soluciones": ["Cast explícito documentado", "Tipos intermedios más anchos", "Comprobá límites antes de convertir"],
     },
 }

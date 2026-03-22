@@ -69,6 +69,10 @@ Omite advertencias: no lista bloques explicados ni líneas con \fBwarning\fR. Po
 .BI \-\-max\-warnings " N"
 Máximo de líneas de warning a listar (default: 5).
 .TP
+.BR \-cnt ", " \-\-count
+Imprime solo conteos (errores, advertencias explicadas, líneas con \fBwarning\fR, desconocidos, total explicado). Respeta
+.BR \-m " y " \-nw .
+.TP
 .BI \-\-shell " CMD"
 Ejecuta
 .I CMD
@@ -120,6 +124,19 @@ sudo ./install.sh uninstall
 .PP
 Reinstalar o actualizar: volver a ejecutar
 .BR "sudo ./install.sh" .
+.SH COMPLETADO EN SHELL
+Bash, zsh y fish: archivos en
+.IR PREFIX /share/explain-errors/completions/
+.RI ( explain.bash ", " _explain ", " explain.fish ).
+Copiá
+.B explain.bash
+a
+.I ~/.local/share/bash-completion/completions/explain
+para bash-completion; zsh requiere
+.I _explain
+en el
+.BR fpath .
+Detalles en el README del proyecto.
 .SH AUTOR
 Iván Ezequiel Rodriguez.
 .SH VEASE TAMBIÉN

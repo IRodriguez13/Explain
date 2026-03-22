@@ -21,11 +21,6 @@ WARNINGS_CSHARP = {
         "explicacion": "Campo no inicializado y no readonly puede quedar en default.",
         "soluciones": ["Inicializa en constructor o haz readonly con valor."],
     },
-    r"warning CS1998:.*async.*no await": {
-        "titulo": "CS1998: método async sin await",
-        "explicacion": "async sin await compila pero no es asíncrono de verdad.",
-        "soluciones": ["Quita async o añade await a operaciones asíncronas."],
-    },
     r"warning CS4014:.*not awaited": {
         "titulo": "CS4014: llamada no esperada (Task)",
         "explicacion": "Se invoca un método async/Task sin await; la tarea puede quedar huérfana.",
@@ -50,5 +45,28 @@ WARNINGS_CSHARP = {
         "titulo": "CS8625: literal null a tipo no nullable",
         "explicacion": "Pasas null donde el tipo dice que no puede ser null.",
         "soluciones": ["Cambia el parámetro a tipo nullable o evita null."],
+    },
+    r"warning CS8601:": {
+        "titulo": "CS8601: posible asignación null a no-nullable",
+        "explicacion": "Asignás un posible null a un tipo referencia no marcado como nullable.",
+        "soluciones": ["Comprobá null antes", "Tipo destino nullable", "operador ! solo si hay garantía"],
+    },
+    r"warning CS8619:": {
+        "titulo": "CS8619: nullability en valores de tupla/tipos genéricos",
+        "explicacion": "Los null states de los componentes no coinciden con el tipo declarado.",
+        "soluciones": ["Ajustá ? en la firma", "Desempaquetá y validá cada componente"],
+    },
+    r"warning CS8765:": {
+        "titulo": "CS8765: nullability del parámetro en override",
+        "explicacion": "El override no coincide en nullability con el miembro base.",
+        "soluciones": ["Alineá ? en parámetros y retorno con la clase base"],
+    },
+    r"warning CS1998:": {
+        "titulo": "CS1998: método async sin await",
+        "explicacion": "El compilador avisa: async sin await no es asíncrono de verdad (corre síncrono).",
+        "soluciones": [
+            "Quita async o añade await a operaciones asíncronas.",
+            "Si solo devolvés un valor ya listo, usa Task.FromResult.",
+        ],
     },
 }

@@ -76,6 +76,32 @@ ERRORES_C = {
         "explicacion": "Acceso a memoria inválida.",
         "soluciones": ["valgrind / ASan", "Punteros y límites de arrays", "gdb con -g"],
     },
+    r"UndefinedBehaviorSanitizer|\bUBSan\b|SUMMARY: UndefinedBehaviorSanitizer": {
+        "titulo": "UndefinedBehaviorSanitizer (UBSan)",
+        "explicacion": "El binario se armó con -fsanitize=undefined (o grupo equivalente): en runtime se detectó una violación explícita del estándar C/C++.",
+        "soluciones": [
+            "Leé la línea archivo:columna y el tipo de UB (overflow, null, misalignment, etc.).",
+            "Recompilá con -g para símbolos y corregí la expresión o el layout de datos.",
+        ],
+    },
+    r"ERROR: AddressSanitizer|AddressSanitizer:|SUMMARY: AddressSanitizer|\bASAN\b": {
+        "titulo": "AddressSanitizer (ASan)",
+        "explicacion": "Instrumentación de memoria: heap-buffer-overflow, use-after-free, stack-overflow, etc. Muchos casos son UB o muy cercanos en la práctica.",
+        "soluciones": ["Stack trace del informe", "Reproducí con el mismo binario ASan", "Revisá límites y tiempo de vida de punteros"],
+    },
+    r"\d+:\d+:\s*runtime error:": {
+        "titulo": "Runtime error (típico de sanitizers Clang)",
+        "explicacion": "Clang suele prefijar con archivo:línea:columna: un `runtime error:` cuando corre con UBSan u otros chequeos; indica UB o condición no permitida por el estándar.",
+        "soluciones": ["Leé el resto del mensaje (overflow, shift, null, alignment)", "Corrige en el fuente o endurece con tipos seguros"],
+    },
+    r"heap-buffer-overflow|stack-buffer-overflow|global-buffer-overflow|heap-use-after-free|stack-use-after-return|use-after-poison": {
+        "titulo": "AddressSanitizer — tipo de fallo (memoria)",
+        "explicacion": "Detalle concreto del informe ASan: desbordamiento de heap/stack, uso tras liberar, retorno con puntero a frame, etc.",
+        "soluciones": [
+            "Leé la dirección y el stack trace del informe.",
+            "Reproducí con el mismo binario -fsanitize=address y símbolos -g.",
+        ],
+    },
     r"request for member.*in something not a structure or union": {
         "titulo": "No es struct/union",
         "explicacion": "Usás `.` o `->` sobre algo que no es struct (ej. puntero mal o tipo equivocado).",
@@ -240,5 +266,50 @@ ERRORES_C = {
         "titulo": "Opciones gcc incompatibles",
         "explicacion": "-o con múltiples unidades de compilación en ciertos modos no está permitido.",
         "soluciones": ["Compilá por separado o quitá -o en ese modo"],
+    },
+    r"incompatible pointer to integer conversion|incompatible integer to pointer conversion": {
+        "titulo": "Conversión puntero / entero incompatible",
+        "explicacion": "El compilador rechaza mezclar puntero y entero sin un cast explícito claro.",
+        "soluciones": ["uintptr_t / intptr_t", "Cast explícito documentado", "Revisá APIs de bajo nivel"],
+    },
+    r"initializer element is not constant": {
+        "titulo": "Inicializador no constante",
+        "explicacion": "En C, static o duración de archivo exigen expresiones constantes en inicializadores.",
+        "soluciones": ["Asignación en función al arrancar", "Macros o enum para constantes"],
+    },
+    r"case label not within a switch statement|default label not within a switch": {
+        "titulo": "case/default fuera de switch",
+        "explicacion": "Un case o default quedó fuera del switch (llave de más o de menos).",
+        "soluciones": ["Revisá llaves alrededor del switch", "Indentación y bloques"],
+    },
+    r"break statement not within loop or switch|continue statement not within a loop": {
+        "titulo": "break/continue mal ubicado",
+        "explicacion": "Ese break o continue no tiene un switch/loop que lo contenga.",
+        "soluciones": ["Revisá anidamiento de if/for/switch", "Estructura del algoritmo"],
+    },
+    r"request for member.*in something not a structure or union": {
+        "titulo": "Operador . en no struct/union",
+        "explicacion": "Usás . donde el operando no es struct/union (a veces falta -> en puntero).",
+        "soluciones": ["-> si es puntero", "Corregí el tipo de la expresión"],
+    },
+    r"lvalue required as unary '&' operand|lvalue required as left operand of assignment": {
+        "titulo": "Se esperaba un lvalue",
+        "explicacion": "No podés tomar & ni asignar al resultado de una expresión que no es modificable.",
+        "soluciones": ["Variable intermedia", "Paréntesis y precedencia de operadores"],
+    },
+    r"linker command failed|collect2: error: ld returned \d+ exit status": {
+        "titulo": "Enlazado falló (ld / collect2)",
+        "explicacion": "La fase de enlace terminó mal; el motivo concreto suele estar unas líneas arriba.",
+        "soluciones": ["undefined reference / multiple definition", "Orden y flags -l", "LDFLAGS y rpath"],
+    },
+    r"cannot compute sizeof|invalid application of 'sizeof'": {
+        "titulo": "sizeof inválido",
+        "explicacion": "sizeof sobre tipo incompleto o uso no permitido por el estándar.",
+        "soluciones": ["Incluí el header con la definición completa", "sizeof(*p) si p es puntero opaco"],
+    },
+    r"variable has incomplete type|field has incomplete type": {
+        "titulo": "Tipo incompleto en variable o campo",
+        "explicacion": "Declarás un struct/union/enum que solo fue declarado adelante.",
+        "soluciones": ["Incluí el .h con la definición completa", "Puntero en lugar de valor embebido"],
     },
 }

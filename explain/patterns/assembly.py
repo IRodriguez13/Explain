@@ -154,4 +154,19 @@ ERRORES_ASM = {
         "explicacion": "Directiva .section/.align incorrecta o flags incompatibles.",
         "soluciones": [".balign/.p2align según sintaxis", "flags a,w,x en .section"],
     },
+    r"\.err encountered|Assembler message:.*\.err|user error.*assembler": {
+        "titulo": "Directiva .err / fallo intencional en asm",
+        "explicacion": "El fuente forzó un error en ensamblado (.err o macro de assert).",
+        "soluciones": ["Condición de la macro", "Quitá .err en rutas válidas"],
+    },
+    r"TLS descriptor|TLS relocation|undefined reference.*__tls": {
+        "titulo": "TLS (thread-local storage)",
+        "explicacion": "Relocalización o modelo de TLS incompatible con el enlazado.",
+        "soluciones": ["__thread / .tbss según toolchain", "Flags de linker para TLS"],
+    },
+    r"CFI directive|\.cfi_|dwarf CFI": {
+        "titulo": "Directivas CFI (unwind)",
+        "explicacion": "Marcadores .cfi_* incoherentes con el prólogo de función.",
+        "soluciones": ["Dejá que gcc -S genere CFI", "Manual: balance start/end"],
+    },
 }

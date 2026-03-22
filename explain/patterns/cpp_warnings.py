@@ -31,4 +31,34 @@ WARNINGS_CPP = {
         "explicacion": "VLA es extensión de GCC, no C++ estándar.",
         "soluciones": ["Usa std::vector o std::array con tamaño fijo."],
     },
+    r"warning:.*sign-conversion|warning:.*sign conversion": {
+        "titulo": "Conversión con cambio de signo",
+        "explicacion": "signed ↔ unsigned puede cambiar el valor representado.",
+        "soluciones": ["static_cast explícito", "Mismo signo en ambos lados"],
+    },
+    r"warning:.*missing initializer|warning:.*missing field": {
+        "titulo": "Inicializador de miembro faltante",
+        "explicacion": "Agregado o struct con campos no listados en { }.",
+        "soluciones": ["Lista completa de campos", "= default en miembros", "Designated initializers C++20"],
+    },
+    r"warning:.*old-style cast|warning:.*use of old-style cast": {
+        "titulo": "C-style cast",
+        "explicacion": "(T)x es más peligroso que static_cast/reinterpret_cast explícitos.",
+        "soluciones": ["static_cast / reinterpret_cast / const_cast según intención"],
+    },
+    r"warning:.*polymorphic.*non-virtual destructor": {
+        "titulo": "Destructor no virtual en clase polimórfica",
+        "explicacion": "Clase con virtual methods pero ~Class no virtual → riesgo al borrar por base*.",
+        "soluciones": ["virtual ~Base() = default;", "O prohibí polimorfismo por base"],
+    },
+    r"warning:.*returning address of local|warning:.*address of stack|warning:.*stack address returned|-Wreturn-stack-address": {
+        "titulo": "Puntero a objeto de pila (UB al usarlo después)",
+        "explicacion": "Se devuelve o se guarda la dirección de un automático; al salir del ámbito deja de ser válida.",
+        "soluciones": ["std::string/std::vector en lugar de char[] local", "static thread_local si aplica", "asignación en heap con contrato claro"],
+    },
+    r"warning:.*null pointer dereference|warning:.*dereference of null": {
+        "titulo": "Posible desreferencia de nullptr (UB si ocurre)",
+        "explicacion": "El compilador infiere un camino donde se usa un puntero nulo; en C++ desreferenciar nullptr es UB.",
+        "soluciones": ["Comprobaciones explícitas", "optional/expected", "Contratos en API"],
+    },
 }

@@ -236,4 +236,34 @@ ERRORES_CSHARP = {
         "explicacion": "Conflicto con namespace clásico en mismo archivo.",
         "soluciones": ["Un solo estilo de namespace por archivo"],
     },
+    r"CS0229:.*ambiguity|is ambiguous between": {
+        "titulo": "CS0229 — ambigüedad",
+        "explicacion": "Dos miembros (p. ej. herencia múltiple) compiten con el mismo nombre.",
+        "soluciones": ["Calificá con nombre de clase base", "new en la derivada"],
+    },
+    r"CS0051:.*inconsistent accessibility": {
+        "titulo": "CS0051 — accesibilidad inconsistente",
+        "explicacion": "Un tipo menos accesible expone otro más accesible (public method con parámetro internal).",
+        "soluciones": ["Hacé pública la clase del parámetro", "Restringí el método"],
+    },
+    r"CS1540:.*cannot access protected member": {
+        "titulo": "CS1540 — protected vía tipo derivado",
+        "explicacion": "Accedés a protected de la base a través de una referencia al tipo derivado de forma inválida.",
+        "soluciones": ["this.Member como derivada", "Revisá visibilidad y static context"],
+    },
+    r"CS0177:.*out parameter|control leaves.*out parameter": {
+        "titulo": "CS0177 — parámetro out no asignado",
+        "explicacion": "Una rama sale sin asignar el out en todos los caminos.",
+        "soluciones": ["Asigná out en cada rama", "throw en caso imposible"],
+    },
+    r"CS1622:.*cannot return a value from an iterator": {
+        "titulo": "CS1622 — return en iterador",
+        "explicacion": "En iterator (yield) usás return con valor en lugar de yield return.",
+        "soluciones": ["yield return", "yield break"],
+    },
+    r"CS8370:.*feature.*not available|required language version": {
+        "titulo": "CS8370 — versión de lenguaje",
+        "explicacion": "Usás sintaxis de C# más nueva que la del proyecto (LangVersion).",
+        "soluciones": ["<LangVersion> en csproj", "preview si es intencional"],
+    },
 }

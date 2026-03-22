@@ -241,4 +241,44 @@ ERRORES_JS = {
         "explicacion": "assert() o expect de test falló.",
         "soluciones": ["Revisá condición e inputs del test"],
     },
+    r"TS2564:|Property.*has no initializer": {
+        "titulo": "TS2564 — propiedad sin inicializar",
+        "explicacion": "strictPropertyInitialization: campo de clase sin valor ni en ctor.",
+        "soluciones": ["Inicializá en ctor", "prop!: con criterio", "strictPropertyInitialization false"],
+    },
+    r"TS2451:|Cannot redeclare block-scoped variable": {
+        "titulo": "TS2451 — variable redeclarada",
+        "explicacion": "let/const con el mismo nombre en el mismo bloque.",
+        "soluciones": ["Renombrá", "Ámbitos distintos con bloques {}"],
+    },
+    r"TS2588:|Cannot assign to.*because it is a constant": {
+        "titulo": "TS2588 — asignación a constante",
+        "explicacion": "Reasignás a const o import inmutable.",
+        "soluciones": ["Usá let", "No mutés bindings de import"],
+    },
+    r"TS2322:.*undefined is not assignable": {
+        "titulo": "TS2322 — undefined vs tipo estricto",
+        "explicacion": "strictNullChecks: undefined no entra en el tipo anotado.",
+        "soluciones": ["T | undefined", "Valor por defecto", "Optional chaining"],
+    },
+    r"ERR_SOCKET_|ECONNRESET|EPIPE|ENOTCONN": {
+        "titulo": "Error de socket (Node)",
+        "explicacion": "Conexión TCP cerrada por el peer, pipe roto o socket no conectado.",
+        "soluciones": ["Manejo en .on('error')", "Reintentos", "Verificá que el servidor siga vivo"],
+    },
+    r"ERR_INVALID_ARG_TYPE|ERR_INVALID_ARG_VALUE": {
+        "titulo": "Argumento inválido (Node)",
+        "explicacion": "API de Node rechazó tipo o valor de parámetro.",
+        "soluciones": ["Revisá docs de la función", "typeof en depuración"],
+    },
+    r"SyntaxError: The requested module|does not provide an export named": {
+        "titulo": "ESM — export faltante",
+        "explicacion": "import { x } pero el módulo no exporta ese nombre (CJS vs ESM).",
+        "soluciones": ["export { }", "import default", "module.exports vs named exports"],
+    },
+    r"ReferenceError: require is not defined": {
+        "titulo": "require en ESM",
+        "explicacion": "En módulo ESM no existe require(); usá import.",
+        "soluciones": ["import/createRequire", '"type": "module" y sintaxis import'],
+    },
 }

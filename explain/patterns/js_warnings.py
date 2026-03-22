@@ -36,4 +36,19 @@ WARNINGS_JS = {
         "explicacion": "El archivo base referenciado en extends no existe en la ruta esperada.",
         "soluciones": ["Corrige la ruta o instala el paquete que provee ese tsconfig."],
     },
+    r"bun (warn|warning)|Bun\.v": {
+        "titulo": "Advertencia de Bun",
+        "explicacion": "El runtime Bun avisa de compatibilidad o resolución distinta a Node.",
+        "soluciones": ["Leé el mensaje", "Probá con node para comparar"],
+    },
+    r"deno (warn|WARNING)": {
+        "titulo": "Advertencia de Deno",
+        "explicacion": "Deno reporta permisos, imports o deprecaciones.",
+        "soluciones": ["Flags --allow-* si aplica", "deno.json imports"],
+    },
+    r"source map|Failed to parse source map": {
+        "titulo": "Source map",
+        "explicacion": "Herramienta no pudo cargar o parsear .map para el bundle.",
+        "soluciones": ["Generá maps en build", "Ignorá en prod si no depurás ahí"],
+    },
 }

@@ -1,0 +1,12 @@
+explain-errors — explicador determinista de mensajes de compilación/ejecución
+
+Copyright (C) 2026 Iván Ezequiel Rodriguez
+
+Este programa es software libre: podés redistribuirlo y/o modificarlo bajo los
+términos de la Licencia Pública General GNU publicada por la Free Software
+Foundation, según la versión 3 de la Licencia, o (a tu elección) cualquier
+versión posterior.
+
+El programa se distribuye con la esperanza de que sea útil, pero SIN NINGUNA
+GARANTÍA; ni siquiera la garantía implícita de comerciabilidad o idoneidad para
+un propósito particular. Ver el archivo LICENSE para más detalles.

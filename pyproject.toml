@@ -1,10 +1,27 @@
 [project]
 name = "explain-errors"
-version = "0.3.0"
+version = "0.4.3"
 description = "Explicador determinista de mensajes de compilación/ejecución (español, sin IA)"
 authors = [{name = "Iván Ezequiel Rodriguez"}]
+license = { file = "LICENSE" }
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = []
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Compilers",
+]
 
 [project.scripts]
 explain = "explain.cli:main"
@@ -16,3 +33,11 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["explain*"]
+
+# Completions instaladas en site-packages/../share/explain-errors/completions/ (ver README).
+[tool.setuptools.data-files]
+"share/explain-errors/completions" = [
+  "completions/explain.bash",
+  "completions/_explain",
+  "completions/explain.fish",
+]

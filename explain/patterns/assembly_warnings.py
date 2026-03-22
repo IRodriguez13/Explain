@@ -3,8 +3,13 @@
 WARNINGS_ASM = {
     r"warning:.*shift count|Warning:.*shift": {
         "titulo": "Ensamblador — conteo de desplazamiento",
-        "explicacion": "El desplazamiento puede exceder el ancho del operando o ser cero de forma sospechosa.",
-        "soluciones": ["Verificá inmediato vs tamaño real", "Máscara explícita"],
+        "explicacion": "El desplazamiento puede exceder el ancho del operando o ser cero de forma sospechosa. En asm puro el manual de la ISA define qué pasa; mezclado con C, shifts inválidos en C siguen siendo UB en ese lado.",
+        "soluciones": ["Verificá inmediato vs tamaño real", "Máscara explícita", "Documentá el comportamiento del modelo de CPU"],
+    },
+    r"warning:.*implementation defined|warning:.*implementation-defined|Warning:.*unspecified": {
+        "titulo": "Asm — implementación definida / no especificado",
+        "explicacion": "No siempre es UB del estándar C, pero el resultado puede depender del ensamblador, del modo (ARM/Thumb, 32/64) o del microarquitectura.",
+        "soluciones": ["Fijá modo y directivas (.syntax, .code64)", "Probá en el target real", "Consultá el manual del fabricante"],
     },
     r"warning:.*end of file|Warning:.*end of file": {
         "titulo": "Ensamblador — archivo incompleto",
@@ -65,5 +70,15 @@ WARNINGS_ASM = {
         "titulo": "Ensamblador — nota (macro/include)",
         "explicacion": "Traza de macro o archivo incluido; el error real suele estar arriba o abajo.",
         "soluciones": ["Seguí la cadena de .include/.macro", "Revisá la línea citada"],
+    },
+    r"warning:.*suggest.*use of|warning:.*did you mean": {
+        "titulo": "Sugerencia de mnemónico",
+        "explicacion": "El ensamblador sugiere otro mnemónico o tamaño de operando.",
+        "soluciones": ["Seguí la sugerencia o consultá el manual de la ISA"],
+    },
+    r"warning:.*for subroutine|warning:.*stack frame": {
+        "titulo": "Marco de pila / subrutina",
+        "explicacion": "Aviso sobre tamaño de frame o alineación de función.",
+        "soluciones": ["Revisá push/pop balanceados", "ABI de la plataforma"],
     },
 }

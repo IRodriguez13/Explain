@@ -251,4 +251,39 @@ ERRORES_PYTHON = {
         "explicacion": "Ctrl+C.",
         "soluciones": ["Manejo en try/except si necesitás cleanup"],
     },
+    r"ssl\.SSLError|SSLCertVerificationError|CERTIFICATE_VERIFY_FAILED": {
+        "titulo": "SSL/TLS",
+        "explicacion": "Handshake fallido, certificado inválido o cadena no confiable.",
+        "soluciones": ["Actualizá certifi/ca bundle", "verify= en requests solo con criterio", "Fecha del sistema"],
+    },
+    r"BlockingIOError:|InterruptedError:": {
+        "titulo": "E/S no bloqueante / interrupción",
+        "explicacion": "Operación no bloqueante sin datos, o syscall interrumpida por señal.",
+        "soluciones": ["select/poll", "Reintentar en EINTR", "fcntl O_NONBLOCK con cuidado"],
+    },
+    r"asyncio\.(CancelledError|TimeoutError|InvalidStateError)": {
+        "titulo": "asyncio — cancelación o estado",
+        "explicacion": "Tarea cancelada, wait_for expiró o Future en estado inválido.",
+        "soluciones": ["asyncio.wait_for timeout", "try/except CancelledError", "shield si aplica"],
+    },
+    r"configparser\.(Error|NoSectionError|NoOptionError|InterpolationError)": {
+        "titulo": "configparser (.ini)",
+        "explicacion": "Archivo INI mal formado, sección u opción inexistente.",
+        "soluciones": ["Revisá secciones [ ] y claves", "defaults en ConfigParser", "RawConfigParser si % conflictúa"],
+    },
+    r"xml\.etree\.ElementTree\.ParseError|ExpatError:": {
+        "titulo": "XML mal formado",
+        "explicacion": "Parser XML rechazó el documento (cierre de tag, encoding).",
+        "soluciones": ["Validá contra un esquema", "encoding= explícito", "Entidad & escapada"],
+    },
+    r"zipfile\.(BadZipFile|LargeZipFile)": {
+        "titulo": "ZIP inválido o demasiado grande",
+        "explicacion": "Archivo corrupto, no es zip, o supera límites de zipfile.",
+        "soluciones": ["Comprobá integridad del archivo", "zipfile.ZIP64 si aplica"],
+    },
+    r"csv\.Error:": {
+        "titulo": "csv.Error",
+        "explicacion": "Línea mal formada para el dialecto (comillas, delimitador).",
+        "soluciones": ["Dialect y quoting", "errors='replace' en open si encoding"],
+    },
 }

@@ -146,4 +146,39 @@ ERRORES_CPP = {
         "explicacion": "La API marca el retorno como obligatorio de observar.",
         "soluciones": ["Asigná o comprobá el resultado", "Si es intencional, documentá por qué"],
     },
+    r"static assertion failed|static_assert failed|error: static assertion": {
+        "titulo": "static_assert falló",
+        "explicacion": "La condición de compilación es falsa; suele ser invariante de plantilla o tamaño.",
+        "soluciones": ["Corregí tipos o tamaños", "Mensaje del static_assert para contexto"],
+    },
+    r"bad_optional_access|optional::value": {
+        "titulo": "std::optional sin valor",
+        "explicacion": "Llamaste value() o el operador * sin comprobar has_value().",
+        "soluciones": ["value_or", "if (opt)", "try/catch bad_optional_access"],
+    },
+    r"std::variant|std::get:.*bad_variant_access|bad_variant_access": {
+        "titulo": "std::variant — acceso inválido",
+        "explicacion": "std::get<T> no coincide con el tipo activo del variant.",
+        "soluciones": ["std::holds_alternative", "std::visit"],
+    },
+    r"std::filesystem|filesystem_error": {
+        "titulo": "std::filesystem",
+        "explicacion": "Operación de rutas (copy, remove, status) falló a nivel de SO.",
+        "soluciones": ["ec.message()", "Permisos y existencia de path", "path genérico vs nativo"],
+    },
+    r"terminate called|std::terminate|~thread.*joinable|joinable.*std::thread": {
+        "titulo": "std::thread — terminación / joinable",
+        "explicacion": "Thread joinable destruido sin join/detach, o terminate por excepción no capturada.",
+        "soluciones": ["join() o detach()", "std::jthread", "try/catch en el hilo"],
+    },
+    r"resource deadlock would occur|deadlock would occur|mutex lock failed": {
+        "titulo": "Deadlock o error de mutex",
+        "explicacion": "std::mutex/recursive_mutex reportó orden de bloqueo inválido o interbloqueo.",
+        "soluciones": ["std::scoped_lock con varios mutex", "Mismo orden de adquisición en todo el código"],
+    },
+    r"strict aliasing|break strict-aliasing|type-punning": {
+        "titulo": "Violación de strict aliasing",
+        "explicacion": "El compilador asume que punteros de tipos distintos no apuntan al mismo objeto.",
+        "soluciones": ["std::memcpy entre representaciones", "std::bit_cast C++20 donde aplique"],
+    },
 }

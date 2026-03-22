@@ -131,4 +131,44 @@ ERRORES_RUST = {
         "explicacion": "Errores previos impiden seguir.",
         "soluciones": ["Arreglá el primer error listado"],
     },
+    r"error\[E0063\]: missing fields": {
+        "titulo": "E0063 — campos faltantes en struct",
+        "explicacion": "Falta inicializar campos en struct (no todos tienen default).",
+        "soluciones": ["Completá el inicializador", "..Default::default()", "derive Default"],
+    },
+    r"error\[E0062\]: field.*specified more than once": {
+        "titulo": "E0062 — campo duplicado",
+        "explicacion": "El mismo campo aparece dos veces en struct literal.",
+        "soluciones": ["Eliminá la duplicación"],
+    },
+    r"error\[E0255\]:.*name.*defined multiple times": {
+        "titulo": "E0255 — nombre definido dos veces",
+        "explicacion": "Import o definición duplicada en el mismo módulo.",
+        "soluciones": ["as en use", "Quitar use redundante"],
+    },
+    r"error\[E0432\]: unresolved import": {
+        "titulo": "E0432 — import no resuelto",
+        "explicacion": "use crate::... o extern crate incorrecto.",
+        "soluciones": ["Ruta del módulo", "Cargo.toml [dependencies]", "pub mod"],
+    },
+    r"error\[E0603\]:.*private": {
+        "titulo": "E0603 — elemento privado",
+        "explicacion": "Accedés a struct, campo o función no pública de otro módulo.",
+        "soluciones": ["pub / pub(crate)", "Reexportación en lib.rs"],
+    },
+    r"error\[E0384\]: cannot assign twice to immutable variable": {
+        "titulo": "E0384 — asignación a inmutable",
+        "explicacion": "Reasignás a let sin mut.",
+        "soluciones": ["let mut", "Nueva variable"],
+    },
+    r"error\[E0521\]: borrowed data escapes outside of": {
+        "titulo": "E0521 — datos prestados escapan",
+        "explicacion": "Closure o hilo intenta llevarse referencias que no viven lo suficiente.",
+        "soluciones": ["'static + Arc", "owned data en move closure"],
+    },
+    r"error\[E0658\]:.*feature.*is unstable": {
+        "titulo": "E0658 — feature inestable",
+        "explicacion": "Usás API nightly sin #![feature(...)].",
+        "soluciones": ["#![feature]", "O esperá estabilización", "toolchain nightly"],
+    },
 }

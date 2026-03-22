@@ -156,4 +156,19 @@ ERRORES_PYTHON_FW = {
         "explicacion": "Fallo en fixture autouse, scope session o hook.",
         "soluciones": ["Traceback del error real arriba", "yield fixture y cleanup"],
     },
+    r"jinja2\.(exceptions\.|TemplateError|TemplateSyntaxError|UndefinedError)": {
+        "titulo": "Jinja2 — plantilla",
+        "explicacion": "Sintaxis de template, variable indefinida o error al renderizar.",
+        "soluciones": ["Revisá {{ }} y bloques", "Pasa variables al Environment", "strict_undefined"],
+    },
+    r"gunicorn\.errors\.|WORKER TIMEOUT|Worker failed to boot": {
+        "titulo": "Gunicorn",
+        "explicacion": "Worker murió, timeout o fallo al arrancar la app WSGI.",
+        "soluciones": ["Logs --log-level debug", "timeout y workers", "Import errors en wsgi.py"],
+    },
+    r"uvicorn\.errors\.|ERROR:.*\[uvicorn\]|Failed to start uvicorn": {
+        "titulo": "Uvicorn — error de arranque o servidor",
+        "explicacion": "Fallo al cargar ASGI, puerto ocupado o excepción en el worker.",
+        "soluciones": ["Otro --port", "Traceback de import de app:factory", "Logs con --log-level debug"],
+    },
 }

@@ -27,8 +27,9 @@ usage() {
   cat <<EOF
 Uso: install.sh [install|uninstall] [--prefix RUTA]
 
-  install     Copia el paquete Python, el lanzador en \$PREFIX/bin/explain
-              y la página man en \$PREFIX/share/man/man1/explain.1 (default).
+  install     Copia el paquete Python, el lanzador en \$PREFIX/bin/explain,
+              la man page y completions (bash/zsh/fish) en
+              \$PREFIX/share/explain-errors/completions/ (ver README).
   uninstall   Elimina esos archivos.
 
 Variables:
@@ -54,6 +55,7 @@ do_install() {
   local dest="$PREFIX/share/explain-errors"
   local bin="$PREFIX/bin/explain"
   local man1="$PREFIX/share/man/man1/explain.1"
+  local comps="$ROOT/completions"
 
   install -d "$PREFIX/bin" || die "no se puede escribir en $PREFIX/bin (probá: sudo $0 install)"
   install -d "$dest" || die "no se puede escribir en $dest"
@@ -80,10 +82,20 @@ EOF
   mv "$bin.tmp" "$bin"
   chmod 755 "$bin"
 
+  if [[ -d "$comps" ]]; then
+    install -d "$dest/completions"
+    install -m644 "$comps/explain.bash" "$dest/completions/"
+    install -m644 "$comps/_explain" "$dest/completions/"
+    install -m644 "$comps/explain.fish" "$dest/completions/"
+  fi
+
   echo "Instalado explain-errors $ver"
   echo "  Lanzador:  $bin"
   echo "  Módulos:   $dest/explain/"
   echo "  Man page:  $man1"
+  if [[ -d "$comps" ]]; then
+    echo "  Completions: $dest/completions/  (bash, zsh, fish — ver README)"
+  fi
   echo ""
   echo "Probar:    explain -h    |    man explain"
   if command -v mandb >/dev/null 2>&1; then
@@ -107,6 +119,7 @@ do_uninstall() {
   if [[ -d "$dest" ]]; then
     rm -rf "${dest:?}"
   fi
+  # Si copiaste completions a sitios del sistema, borralos a mano (no asumimos esos paths)
 
   echo "Desinstalado (PREFIX=$PREFIX)."
 }

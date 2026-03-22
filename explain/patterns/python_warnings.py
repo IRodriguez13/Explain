@@ -23,8 +23,8 @@ WARNINGS_PYTHON = {
     },
     r"BytesWarning:": {
         "titulo": "BytesWarning",
-        "explicacion": "Mezcla o comparación dudosa entre str y bytes.",
-        "soluciones": ["Decodifica o codifica explícitamente con encoding conocido."],
+        "explicacion": "Mezcla o comparación dudosa entre str y bytes, o str() sobre bytes.",
+        "soluciones": ["Decodifica o codifica con encoding conocido", "Literales b'...' coherentes"],
     },
     r"ImportWarning:": {
         "titulo": "ImportWarning",
@@ -50,5 +50,10 @@ WARNINGS_PYTHON = {
         "titulo": "FutureWarning",
         "explicacion": "El comportamiento cambiará en una versión futura; típico en NumPy/pandas.",
         "soluciones": ["Adapta el código a la API nueva indicada en el mensaje."],
+    },
+    r"EncodingWarning:": {
+        "titulo": "EncodingWarning",
+        "explicacion": "Python 3.10+ avisa si open() o io usa encoding implícito en entorno ambiguo.",
+        "soluciones": ["encoding='utf-8' explícito en open()", "PYTHONWARNINGS=error solo en CI si querés forzar"],
     },
 }

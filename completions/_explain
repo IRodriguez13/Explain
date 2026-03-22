@@ -1,0 +1,17 @@
+#compdef explain
+# Zsh completion for explain-errors
+# Instalación: cp _explain ~/.zsh/completions/  → fpath+=(~/.zsh/completions); autoload -Uz compinit; compinit
+
+_arguments -s -S : \
+  '(-h --help)'{-h,--help}'[mostrar ayuda y salir]' \
+  '--version[mostrar versión]' \
+  '(-l --lang)'{-l,--lang}'[lenguaje de la base de patrones]:lenguaje:(auto C C\+\+ Assembly C\# Python JavaScript Rust)' \
+  '(-v --verbose)'{-v,--verbose}'[volcar salida cruda en stderr antes del resumen]' \
+  '--full[formato de salida extendido]' \
+  '--ub-hints[sección UB-RISK si hay -Wall/-fsanitize/sanitizers en cmd o salida]' \
+  '(-nw --no-warnings)'{-nw,--no-warnings}'[omitir advertencias y listado de warnings]' \
+  '--max-warnings+[máx. líneas warning al final]:número:(1 3 5 10 20 50 100)' \
+  '(-m --match)'{-m,--match}'[filtrar bloques por subcadena]:texto:' \
+  '--shell[ejecutar comando vía shell del sistema]:comando:' \
+  '(-cnt --count)'{-cnt,--count}'[solo imprimir conteos; respeta -m, -nw, --ub-hints]' \
+  '*:: :_command_names -e'

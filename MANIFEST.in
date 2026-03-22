@@ -1,0 +1,5 @@
+include LICENSE COPYRIGHT README.md
+recursive-include docs *.md
+graft tests
+graft completions
+graft man
