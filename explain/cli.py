@@ -12,6 +12,7 @@ import sys
 from collections import Counter
 from typing import Iterable, Optional
 
+from explain import __author__, __version__
 from explain.extract import Location, enrich_locations, match_text_for_patterns
 from explain.patterns import bases_por_lenguaje
 
@@ -44,8 +45,8 @@ _EXT_A_FAMILIA: dict[str, str] = {
     "jsx": "JavaScript",
     "ts": "JavaScript",
     "tsx": "JavaScript",
-    "s": "C",
-    "asm": "C",
+    "s": "Assembly",
+    "asm": "Assembly",
 }
 
 
@@ -159,6 +160,10 @@ def detectar_lenguaje_desde_salida(texto: str) -> str:
         r"^\s+at\s+.+\([^)]+:\d+:\d+\)\s*$", texto, re.MULTILINE
     ):
         return "JavaScript"
+    if re.search(r"\.(?:s|asm):\d+:", texto, re.I) or re.search(
+        r"Assembler messages|Error: (no such instruction|operand)|\.s:\d+:", texto, re.I
+    ):
+        return "Assembly"
     if re.search(r":\d+:\d+:\s*(error|warning):", texto) or re.search(
         r"undefined reference to", texto
     ):
@@ -185,6 +190,56 @@ def primera_linea_con_error(texto: str) -> Optional[str]:
         ):
             return s
     return None
+
+
+def _parece_linea_diagnostico_error(s: str) -> bool:
+    """Línea que parece un error de compilador/linker/runtime (no notas ni contexto ^)."""
+    if re.search(r":\d+:\d+:\s*note:", s, re.I) or re.search(r":\d+:\s*note:", s, re.I):
+        return False
+    if re.match(r"^\s+\|\s*[~^]+\s*$", s):
+        return False
+    if re.match(r"^\s*\d+\s*\|", s) and "^" in s:
+        return False
+    if re.search(r":\d+:\d+:\s*error:", s):
+        return True
+    if re.search(r":\d+:\s*error:", s):
+        return True
+    if re.search(r"\bfatal\s+error\s*:", s, re.I):
+        return True
+    if re.search(r"\berror\s+CS\d{4}", s):
+        return True
+    if re.search(r"\berror\s+TS\d{4}\b", s):
+        return True
+    if re.search(r"error\[[^\]]+\]:", s):
+        return True
+    if re.search(r"undefined reference to", s):
+        return True
+    if re.search(r"\bundefined symbol\b", s, re.I):
+        return True
+    if re.search(r"\bmultiple definition of\b", s):
+        return True
+    if re.match(r"^ld:.*\b(error|cannot)\b", s, re.I):
+        return True
+    if re.match(r"^[A-Za-z_][\w.]*Error:\s*", s):
+        return True
+    if re.match(r"^(SyntaxError|IndentationError|TabError|ImportError|ModuleNotFoundError):\s*", s):
+        return True
+    return False
+
+
+def recopilar_errores_sin_patron(texto: str, lineas_explicadas: set[str]) -> list[str]:
+    """Errores que parecen diagnósticos pero no matchearon ningún patrón de la base."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for line in texto.splitlines():
+        st = line.strip()
+        if not st or st in seen or st in lineas_explicadas:
+            continue
+        if not _parece_linea_diagnostico_error(st):
+            continue
+        seen.add(st)
+        out.append(st)
+    return out
 
 
 def buscar_patron(texto: str, base: dict) -> Optional[tuple[str, dict]]:
@@ -268,6 +323,63 @@ def analizar(
     return hallazgos, warnings_lines
 
 
+def _error_coincide_match(err: dict, needle: str) -> bool:
+    """Subcadena en mensaje del compilador, ubicación, título o símbolo (sin distinguir mayúsculas)."""
+    n = needle.lower()
+    if n in err["linea_original"].lower():
+        return True
+    if err.get("ubicacion") and n in str(err["ubicacion"]).lower():
+        return True
+    if n in err["info"]["titulo"].lower():
+        return True
+    sym = err.get("simbolo")
+    if sym and n in sym.lower():
+        return True
+    return False
+
+
+def filtrar_por_match(
+    errores: list[dict],
+    warnings: list[str],
+    match: Optional[str],
+) -> tuple[list[dict], list[str]]:
+    if not match or not match.strip():
+        return errores, warnings
+    n = match.strip()
+    err_f = [e for e in errores if _error_coincide_match(e, n)]
+    warn_f = [w for w in warnings if n.lower() in w.lower()]
+    return err_f, warn_f
+
+
+def _append_bloques_desconocidos(
+    out: list[str],
+    desconocidos: list[str],
+    offset: int,
+    compacto: bool,
+) -> None:
+    if not desconocidos:
+        return
+    if compacto:
+        out.append("─── Errores sin entrada en la base (desconocidos) ───")
+        for i, ln in enumerate(desconocidos, 1):
+            out.append(f"{offset + i}. desconocido")
+            out.append(f"   mensaje: {ln}")
+            out.append(
+                "   hint: Ampliá explain/patterns/ del lenguaje o pasá el texto a la documentación del compilador."
+            )
+            out.append("")
+    else:
+        bar = "━" * 60
+        out.append(bar)
+        out.append(f"SIN PATRÓN EN LA BASE ({len(desconocidos)} mensaje(s))")
+        out.append(bar)
+        out.append("")
+        for i, ln in enumerate(desconocidos, 1):
+            out.append(f"DESCONOCIDO #{offset + i}")
+            out.append(f"  {ln}")
+            out.append("")
+
+
 def formatear_salida(
     errores: list[dict],
     warnings: list[str],
@@ -276,13 +388,30 @@ def formatear_salida(
     max_warnings: int,
     compacto: bool,
     linea_cruda_sin_patron: Optional[str] = None,
+    filtro_match_vacio: Optional[tuple[int, int, str]] = None,
+    desconocidos: Optional[list[str]] = None,
 ) -> str:
     out: list[str] = []
     sep = "━" * 60
+    desconocidos = desconocidos or []
 
-    if not errores and not warnings:
+    if not errores and not warnings and not desconocidos:
         out.append(f"(explain · {lenguaje})")
         out.append("")
+        if filtro_match_vacio is not None:
+            n_err, n_warn, filtro = filtro_match_vacio
+            partes = []
+            if n_err:
+                partes.append(f"{n_err} error(es)")
+            if n_warn:
+                partes.append(f"{n_warn} warning(s)")
+            out.append(
+                f"Ninguna entrada coincide con --match {filtro!r} "
+                f"({', '.join(partes)} tenían explicación y se omitieron)."
+            )
+            out.append("Quitá -m/--match para ver todos.")
+            out.append("")
+            return "\n".join(out) + "\n"
         if linea_cruda_sin_patron:
             out.append("No hay una entrada en la base para este mensaje (mostrando una línea típica):")
             out.append(f"  {linea_cruda_sin_patron}")
@@ -320,6 +449,7 @@ def formatear_salida(
                 out.append(f"  · {w}")
             if len(warnings) > max_warnings:
                 out.append(f"  · … y {len(warnings) - max_warnings} más")
+        _append_bloques_desconocidos(out, desconocidos, len(errores), compacto=True)
         return "\n".join(out).rstrip() + "\n"
 
     out.append(sep)
@@ -361,10 +491,13 @@ def formatear_salida(
             out.append(f"  ... y {len(warnings) - max_warnings} más")
         out.append("")
 
+    _append_bloques_desconocidos(out, desconocidos, len(errores), compacto=False)
+
     out.append(sep)
     out.append("RESUMEN")
     out.append(sep)
     out.append(f"Patrones explicados: {len(errores)}")
+    out.append(f"Desconocidos listados: {len(desconocidos)}")
     out.append(f"Warnings listados: {len(warnings)}")
     return "\n".join(out) + "\n"
 
@@ -392,6 +525,7 @@ def ejecutar_comando(argv_cmd: list[str]) -> tuple[str, int]:
 
 def construir_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
+        prog="explain",
         description="Explica errores de compilación/ejecución en español (patrones fijos, sin IA).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -408,6 +542,9 @@ Por defecto solo imprime las explicaciones de los errores que matchean la base (
 Usá -v para volcar el log completo en stderr. Con tubería, el resumen sigue en stdout:
   make iv 2>&1 | explain > resumen.txt
 
+Filtrar entradas completas (mejor que grep, que corta "por qué" / "qué hacer"):
+  explain make iv -m backup
+
 --lang auto: comando (gcc, python3, …), rutas en los argumentos (make script.py), extensiones
 en la salida, formato del mensaje; si no hay señal, C.
 
@@ -415,9 +552,14 @@ en la salida, formato del mensaje; si no hay señal, C.
         """.strip(),
     )
     p.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__} · {__author__}",
+    )
+    p.add_argument(
         "-l",
         "--lang",
-        choices=["auto", "C", "C++", "C#", "Python", "JavaScript", "Rust"],
+        choices=["auto", "C", "C++", "Assembly", "C#", "Python", "JavaScript", "Rust"],
         default="auto",
         help="Lenguaje de la base de patrones (default: auto)",
     )
@@ -442,6 +584,13 @@ en la salida, formato del mensaje; si no hay señal, C.
         type=int,
         default=5,
         help="Máximo de warnings a listar al final",
+    )
+    p.add_argument(
+        "-m",
+        "--match",
+        metavar="TEXTO",
+        default=None,
+        help="Solo mostrar bloques de error cuyo mensaje, archivo:línea, título o función contengan TEXTO",
     )
     p.add_argument(
         "--shell",
@@ -510,8 +659,39 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         incluir_warnings=bool(args.warnings),
     )
 
+    lineas_explicadas = {e["linea_original"] for e in errores}
+    desconocidos_full = recopilar_errores_sin_patron(texto, lineas_explicadas)
+
+    errores_antes_filtro = len(errores)
+    warns_antes_filtro = len(warns)
+    errores, warns = filtrar_por_match(errores, warns, args.match)
+
+    if args.match and args.match.strip():
+        needle = args.match.strip().lower()
+        desconocidos = [ln for ln in desconocidos_full if needle in ln.lower()]
+    else:
+        desconocidos = desconocidos_full
+
     sin_patron = None
-    if not errores:
+    filtro_match_vacio: Optional[tuple[int, int, str]] = None
+    if (
+        args.match
+        and args.match.strip()
+        and not errores
+        and not warns
+        and not desconocidos
+        and (errores_antes_filtro > 0 or warns_antes_filtro > 0 or len(desconocidos_full) > 0)
+    ):
+        filtro_match_vacio = (
+            errores_antes_filtro,
+            warns_antes_filtro,
+            args.match.strip(),
+        )
+    elif (
+        errores_antes_filtro == 0
+        and warns_antes_filtro == 0
+        and len(desconocidos_full) == 0
+    ):
         sin_patron = primera_linea_con_error(texto)
 
     if args.verbose:
@@ -529,6 +709,8 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
             max_warnings=args.max_warnings,
             compacto=not args.full,
             linea_cruda_sin_patron=sin_patron,
+            filtro_match_vacio=filtro_match_vacio,
+            desconocidos=desconocidos,
         ).rstrip("\n"),
     )
 

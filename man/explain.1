@@ -39,6 +39,17 @@ El lenguaje de la base de patrones se infiere con
 y forma del mensaje.
 .SH OPCIONES
 .TP
+.BR \-m " " \fITEXTO\fR ", " \-\-match " " \fITEXTO\fR
+Solo muestra bloques de error (mensaje, explicación y pasos) cuyo texto de error,
+archivo:línea, título o función contengan
+.IR TEXTO .
+Útil frente a
+.BR grep ,
+que corta el bloque.
+.TP
+.BR \-\-version
+Muestra la versión y el autor, y termina.
+.TP
 .BR \-h ", " \-\-help
 Muestra la ayuda de línea de comandos y termina.
 .TP
@@ -69,6 +80,12 @@ con
 explain make kernel.c
 Compila vía make y muestra explicaciones solo para errores reconocidos.
 .TP
+explain make iv \-m backup
+Solo las entradas relacionadas con la subcadena
+.IR backup ,
+con el bloque completo (no hace falta
+.BR grep ).
+.TP
 explain gcc \-Wall main.c \-o main
 .TP
 make iv 2>&1 | explain > resumen.txt
@@ -83,10 +100,8 @@ Tras
 .IR PREFIX /bin/explain
 \(em lanzador
 .IP \[bu]
-.IR PREFIX /share/explain-errors/explain/
-\(em módulos Python (editá
-.B patterns.py
-para ampliar la base)
+.IR PREFIX /share/explain-errors/explain/patterns/
+\(em paquete de patrones por lenguaje (regex → explicación en español)
 .IP \[bu]
 .IR PREFIX /share/man/man1/explain.1
 \(em esta página
@@ -101,6 +116,8 @@ sudo ./install.sh uninstall
 .PP
 Reinstalar o actualizar: volver a ejecutar
 .BR "sudo ./install.sh" .
+.SH AUTOR
+Iván Ezequiel Rodriguez.
 .SH VEASE TAMBIÉN
 .BR gcc (1),
 .BR make (1),
