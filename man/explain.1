@@ -1,0 +1,107 @@
+.TH EXPLAIN 1 "marzo 2026" "@VERSION@" "Comandos de usuario"
+.SH NOMBRE
+explain \- explica errores de compilación o ejecución en español (sin IA, por patrones)
+.SH SINOPSIS
+.nf
+\fBexplain\fP [\fIopciones\fP] [\fIcomando\fP \fIargumentos\fP ...]
+\fBexplain\fP [\fIopciones\fP] < \fIarchivo\fP
+\fIcomando\fP \fB2>&1\fP | \fBexplain\fP [\fIopciones\fP]
+.fi
+.SH DESCRIPCION
+.B explain
+analiza la salida de herramientas como
+.BR gcc ,
+.BR make ,
+.BR python3 ,
+.BR dotnet ,
+.BR cargo ,
+.BR node
+u otras, y para cada mensaje que coincida con su base local de expresiones regulares
+muestra un título, una explicación en castellano y pasos concretos.
+Todo el proceso es determinista: no usa modelos de lenguaje ni red.
+.PP
+Si se invocan argumentos después de las opciones de
+.BR explain ,
+éste
+.I ejecuta
+ese comando y mezcla
+.B stdout
+y
+.B stderr
+del hijo, de modo que no hace falta
+.BR "2>&1"
+en ese modo.
+Si no hay comando y la entrada estándar no es una terminal, se lee el texto del pipe.
+.PP
+El lenguaje de la base de patrones se infiere con
+.B \-\-lang auto
+(valor por defecto): herramienta invocada, extensiones en la línea de comandos y en la salida,
+y forma del mensaje.
+.SH OPCIONES
+.TP
+.BR \-h ", " \-\-help
+Muestra la ayuda de línea de comandos y termina.
+.TP
+.BR \-l ", " \-\-lang " " auto|c|c++|c#|python|javascript|rust
+Fuerza el conjunto de patrones. Por defecto:
+.BR auto .
+.TP
+.BR \-v ", " \-\-verbose
+Escribe la salida cruda completa en el error estándar antes del resumen.
+.TP
+.B \-\-full
+Formato de salida extendido; por defecto se usa un formato compacto.
+.TP
+.B \-\-warnings
+Incluye advertencias del compilador al buscar coincidencias.
+.TP
+.BI \-\-max\-warnings " N"
+Máximo de líneas de warning a listar (default: 5).
+.TP
+.BI \-\-shell " CMD"
+Ejecuta
+.I CMD
+con
+.BR sh \-c ;
+útil para pipelines dentro del comando.
+.SH EJEMPLOS
+.TP
+explain make kernel.c
+Compila vía make y muestra explicaciones solo para errores reconocidos.
+.TP
+explain gcc \-Wall main.c \-o main
+.TP
+make iv 2>&1 | explain > resumen.txt
+El resumen va al archivo; sin
+.B \-v
+no se repite todo el log en la consola.
+.SH ARCHIVOS
+Tras
+.B install.sh
+:
+.IP \[bu] 2
+.IR PREFIX /bin/explain
+\(em lanzador
+.IP \[bu]
+.IR PREFIX /share/explain-errors/explain/
+\(em módulos Python (editá
+.B patterns.py
+para ampliar la base)
+.IP \[bu]
+.IR PREFIX /share/man/man1/explain.1
+\(em esta página
+.SH INSTALACIÓN Y DESINSTALACIÓN
+En el directorio del proyecto:
+.PP
+.nf
+sudo ./install.sh
+sudo PREFIX=/usr ./install.sh
+sudo ./install.sh uninstall
+.fi
+.PP
+Reinstalar o actualizar: volver a ejecutar
+.BR "sudo ./install.sh" .
+.SH VEASE TAMBIÉN
+.BR gcc (1),
+.BR make (1),
+.BR python3 (1)
