@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from explain.capsules.man_coverage_bulk import MAN_C_GAP_FILL
+
 
 def _(
     mal: str,
@@ -194,6 +196,7 @@ CAPSULES_C_GAP: dict[str, dict[str, Any]] = {
         "Se descarta `const` u otro calificador en la conversión implícita.",
         "Propagá `const` o copia a buffer mutable.",
     ),
+    **MAN_C_GAP_FILL,
 }
 
 __all__ = ["CAPSULES_C_GAP"]

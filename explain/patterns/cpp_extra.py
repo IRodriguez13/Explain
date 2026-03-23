@@ -181,4 +181,139 @@ ERRORES_CPP = {
         "explicacion": "El compilador asume que punteros de tipos distintos no apuntan al mismo objeto.",
         "soluciones": ["std::memcpy entre representaciones", "std::bit_cast C++20 donde aplique"],
     },
+    r"covariant return type|incompatible covariant return": {
+        "titulo": "Tipo de retorno covariante",
+        "explicacion": "Override con tipo de retorno distinto debe ser covariante (punteros/refs a derivada).",
+        "soluciones": ["Misma jerarquía de tipos de retorno", "std::unique_ptr con deleter"],
+    },
+    r"non-virtual thunk|undefined reference to vtable for __cxxabiv1": {
+        "titulo": "ABI / thunk / vtable",
+        "explicacion": "Enlace o herencia múltiple: thunk o RTTI de Itanium ABI sin resolver.",
+        "soluciones": ["Linkeá todas las unidades que definen virtual", "Orden de librerías C++"],
+    },
+    r"reference to local variable|returning reference to local": {
+        "titulo": "Referencia a local",
+        "explicacion": "Retornás T& o const T& a variable automática de la función.",
+        "soluciones": ["Retorná por valor", "std::string en lugar de const char* local"],
+    },
+    r"exception specification of overriding function is more lax than": {
+        "titulo": "noexcept más laxo en override",
+        "explicacion": "Override no puede relajar noexcept respecto al virtual base.",
+        "soluciones": ["Marcá noexcept igual que la base", "noexcept(false) solo si la base lo permite"],
+    },
+    r"allocation of incomplete type|invalid application of 'sizeof' to incomplete type '": {
+        "titulo": "Tipo incompleto en new/sizeof",
+        "explicacion": "new o sizeof sobre clase declarada pero no definida.",
+        "soluciones": ["Incluí el header con definición completa", "Destructor = default en .cpp"],
+    },
+    r"default argument given for parameter": {
+        "titulo": "Argumento por defecto repetido",
+        "explicacion": "Valor por defecto en declaración y definición o duplicado en overloads.",
+        "soluciones": ["Default solo en la declaración en header", "Una firma con defaults"],
+    },
+    r"std::bad_alloc|std::bad_array_new_length": {
+        "titulo": "std::bad_alloc",
+        "explicacion": "new falló por falta de memoria o tamaño de array inválido.",
+        "soluciones": ["Reservá menos", "nothrow new o try/catch", "vector::reserve con criterio"],
+    },
+    r"std::length_error|std::out_of_range": {
+        "titulo": "length_error / out_of_range",
+        "explicacion": "string::at, vector::at o resize excede max_size o índice.",
+        "soluciones": ["Comprobar size()", "at() vs [] con límites"],
+    },
+    r"std::future_error|std::promise|std::packaged_task": {
+        "titulo": "std::future / promise",
+        "explicacion": "Promise rota, get() dos veces o estado inválido.",
+        "soluciones": ["Un solo get()", "set_value una vez", "shared_future si varios lectores"],
+    },
+    r"std::system_error|std::error_code": {
+        "titulo": "std::system_error",
+        "explicacion": "Operación de filesystem, thread o iostream mapeó errno a system_error.",
+        "soluciones": ["code().message()", "category correcto"],
+    },
+    r"std::regex_error": {
+        "titulo": "std::regex",
+        "explicacion": "Patrón regex ECMA inválido o flag incompatible.",
+        "soluciones": ["Sintaxis regex C++", "Escapá correctamente"],
+    },
+    r"std::ios_base::failure|std::iostream": {
+        "titulo": "iostream — fallo",
+        "explicacion": "Stream en failbit/badbit (lectura/escritura o conversión).",
+        "soluciones": ["good() y exceptions mask", "clear() con criterio"],
+    },
+    r"std::thread::|std::terminate|joinable\(\)|detach": {
+        "titulo": "std::thread — join/detach",
+        "explicacion": "Destructor de thread joinable o terminate por excepción no capturada en join.",
+        "soluciones": ["join() o detach()", "std::jthread"],
+    },
+    r"mutex lock failed|resource deadlock would occur|std::mutex|std::timed_mutex": {
+        "titulo": "Mutex C++",
+        "explicacion": "std::mutex bloqueo inválido o deadlock detectado (recursive misuse).",
+        "soluciones": ["scoped_lock múltiples mutex", "Orden de bloqueo uniforme"],
+    },
+    r"std::condition_variable|wait.*predicate": {
+        "titulo": "condition_variable",
+        "explicacion": "Spurious wakeup sin predicate o notify sin lock coherente.",
+        "soluciones": ["while (!pred) wait", "unique_lock correcto"],
+    },
+    r"std::chrono|duration_cast|time_point": {
+        "titulo": "std::chrono",
+        "explicacion": "Mezcla de clocks, unidades o conversión que pierde precisión.",
+        "soluciones": ["duration_cast explícito", "Mismo clock para compare"],
+    },
+    r"std::format_error|std::vformat": {
+        "titulo": "std::format (C++20)",
+        "explicacion": "Cadena de formato o argumentos no coinciden con std::format.",
+        "soluciones": ["{} conteos", "Tipos formateables"],
+    },
+    r"std::source_location|std::stacktrace": {
+        "titulo": "stacktrace / source_location",
+        "explicacion": "Captura de stacktrace falló o linking sin -lstdc++_libbacktrace según toolchain.",
+        "soluciones": ["Flags del compilador para stacktrace", "Fallback a manual logging"],
+    },
+    r"std::ranges::|std::views::|view_closure": {
+        "titulo": "std::ranges / views",
+        "explicacion": "Rango no common, iterator inválido tras invalidación, o pipe mal tipado.",
+        "soluciones": ["Materializá con to<vector>", "Lifetime del contenedor base"],
+    },
+    r"std::barrier|std::latch|std::counting_semaphore": {
+        "titulo": "Sincronización C++20",
+        "explicacion": "Uso incorrecto de latch/barrier/semaphore (conteo, arrive).",
+        "soluciones": ["Documentación cppreference", "Contador inicial coherente"],
+    },
+    r"std::expected|unexpected": {
+        "titulo": "std::expected (C++23)",
+        "explicacion": "Acceso a valor sin comprobar has_value o error mal construido.",
+        "soluciones": ["value_or", "and_then", "Comprobar antes de value()"],
+    },
+    r"reinterpret_cast.*strict aliasing|accessing value through.*glvalue": {
+        "titulo": "reinterpret_cast / aliasing",
+        "explicacion": "Violación de strict aliasing al reinterpretar punteros.",
+        "soluciones": ["std::bit_cast C++20", "memcpy byte a byte"],
+    },
+    r"virtual function.*final|cannot override.*final": {
+        "titulo": "override y final",
+        "explicacion": "Intentás override de método marcado final en la base.",
+        "soluciones": ["Otro nombre de método", "Quita final si el diseño lo permite"],
+    },
+    r"abstract type.*is not allowed for variable|instantiation of incomplete": {
+        "titulo": "Tipo abstracto o incompleto",
+        "explicacion": "Instanciás clase abstracta o tipo incompleto en plantilla.",
+        "soluciones": ["Tipo concreto derivado", "Completar definición antes de instanciar"],
+    },
+    r"destructor of .* is protected|destructor of .* is private": {
+        "titulo": "Destructor no accesible",
+        "explicacion": "La clase tiene destructor protected/private y se intenta destruir en contexto que no es friend o derivada.",
+        "soluciones": ["Heredá y exponé política de destrucción", "friend", "std::unique_ptr con deleter custom"],
+    },
+    r"constructor of .* is (private|protected) within this context": {
+        "titulo": "Constructor no accesible",
+        "explicacion": "No podés construir el objeto: ctor privado/protected (singleton, factory, error de visibilidad).",
+        "soluciones": ["Método estático create()", "friend", "Hacer ctor public si el diseño lo permite"],
+    },
+    r"std::bad_function_call|bad_function_call": {
+        "titulo": "std::bad_function_call",
+        "explicacion": "Invocaste std::function vacío (sin target asignado).",
+        "soluciones": ["if (f)", "Asigná lambda o puntero antes de llamar", "optional<function>"],
+    },
 }

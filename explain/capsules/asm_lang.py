@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from explain.capsules.man_coverage_bulk import MAN_ASM_GAP_FILL
+from explain.capsules.support_extension_capsules import CAPSULES_SUPPORT_ASM
+
 
 def _a(
     mal: str,
@@ -354,6 +357,8 @@ comentario sin cerrar""",
         "Aviso sobre tamaño o forma del stack frame.",
         "Verificá prólogo/epílogo y alineación requerida por la ABI.",
     ),
+    **CAPSULES_SUPPORT_ASM,
+    **MAN_ASM_GAP_FILL,
 }
 
 __all__ = ["CAPSULES_ASM_HANDWRITTEN"]

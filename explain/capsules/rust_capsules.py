@@ -320,7 +320,7 @@ fn main() {
         "Campo privado de otro módulo.",
         "API pública del tipo que exponga acceso controlado.",
     ),
-    r"error\[E0515\]: cannot return reference to": _(
+    r"error\[E0515\]: cannot return (reference to|value referencing)": _(
         "fn f() -> &i32 { &42 }",
         "Retorná i32 o tomá &i32 como argumento con lifetime",
         "Referencia a local o temporal de la función.",

@@ -56,4 +56,64 @@ WARNINGS_RUST = {
         "explicacion": "Se asigna un valor que luego se sobrescribe sin leerse.",
         "soluciones": ["Eliminá la asignación intermedia", "Revisá la lógica"],
     },
+    r"warning: unused import: `std::": {
+        "titulo": "Import std no usado",
+        "explicacion": "use std::... redundante con el prelude o sin uso.",
+        "soluciones": ["Eliminá el use", "allow si macro genera"],
+    },
+    r"warning: unused `.*` that must be used": {
+        "titulo": "must_use no usado (warning)",
+        "explicacion": "Result u otro tipo #[must_use] ignorado.",
+        "soluciones": ["let _ = con comentario", "Manejá el error"],
+    },
+    r"warning:.*#\[deprecated\]": {
+        "titulo": "API deprecada (Rust)",
+        "explicacion": "Llamás función o trait marcado deprecated.",
+        "soluciones": ["Migrá a la API sugerida en note = \"...\""],
+    },
+    r"warning: variable `.*` should have a snake case name": {
+        "titulo": "non_snake_case",
+        "explicacion": "Convención de nombres: funciones y variables en snake_case.",
+        "soluciones": ["Renombrá", "#[allow(non_snake_case)] puntual"],
+    },
+    r"warning:.*should have an upper camel case name": {
+        "titulo": "non_camel_case_types",
+        "explicacion": "Tipos y traits esperan UpperCamelCase.",
+        "soluciones": ["Renombrá el tipo"],
+    },
+    r"warning:.*static.*should have UPPER_SNAKE_CASE": {
+        "titulo": "non_upper_case_globals",
+        "explicacion": "Statics y constantes suelen ir en SCREAMING_SNAKE_CASE.",
+        "soluciones": ["Renombrá o allow"],
+    },
+    r"warning: unreachable_pub": {
+        "titulo": "unreachable_pub",
+        "explicacion": "pub en item que no es alcanzable fuera del crate (dead API).",
+        "soluciones": ["pub(crate) o quita pub", "Si es intencional, allow"],
+    },
+    r"warning: trivial_numeric_casts|unnecessary_cast": {
+        "titulo": "Cast innecesario",
+        "explicacion": "Clippy o rustc advierte cast redundante.",
+        "soluciones": ["Eliminá el cast", "Dejá si clarifica tipos"],
+    },
+    r"warning:.*does not need to be mutable": {
+        "titulo": "mut innecesario (variante)",
+        "explicacion": "Similar a variable does not need to be mutable.",
+        "soluciones": ["Quita mut"],
+    },
+    r"warning: hiding a lifetime that's elided": {
+        "titulo": "Lifetime elidido oculto",
+        "explicacion": "Nombre de lifetime en firma poco claro respecto a elisión.",
+        "soluciones": ["Explícita 'a o dejá elidido sin nombre duplicado"],
+    },
+    r"warning: type could implement `Copy`": {
+        "titulo": "derive Copy sugerido",
+        "explicacion": "Clippy sugiere Copy para small POD.",
+        "soluciones": ["#[derive(Copy, Clone)] si semántica lo permite"],
+    },
+    r"warning:.*clippy::": {
+        "titulo": "Clippy (lint)",
+        "explicacion": "Cargo clippy emitió advertencia con nombre clippy::lint.",
+        "soluciones": ["Mensaje del lint", "#[allow(clippy::...)] con criterio"],
+    },
 }

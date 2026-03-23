@@ -169,4 +169,69 @@ ERRORES_ASM = {
         "explicacion": "Marcadores .cfi_* incoherentes con el prólogo de función.",
         "soluciones": ["Dejá que gcc -S genere CFI", "Manual: balance start/end"],
     },
+    r"RISC-V|riscv|unknown instruction.*rv": {
+        "titulo": "RISC-V",
+        "explicacion": "Mnemónico o extensión C/M/A/F/D no habilitada en -march.",
+        "soluciones": ["-march=rv64gc", ".option arch", "Manual del ensamblador GNU RISC-V"],
+    },
+    r"MIPS|mips.*:.*Error|\.set mips": {
+        "titulo": "MIPS",
+        "explicacion": "Modo MIPS16 vs MIPS32, delay slot, o registro inválido.",
+        "soluciones": [".set noreorder con cuidado", "nop en branch delay", "-march=mips*"],
+    },
+    r"PowerPC|ppc|PPC.*error": {
+        "titulo": "PowerPC",
+        "explicacion": "Sintaxis específica PPC (r0 especial, TOC en ELFv2).",
+        "soluciones": ["Manual binutils ppc", "-mpower* flags"],
+    },
+    r"LoongArch|loongarch": {
+        "titulo": "LoongArch",
+        "explicacion": "ISA LoongArch: mnemónico o modo incorrecto.",
+        "soluciones": ["Triple loongarch64-unknown-linux-gnu", "GNU as LoongArch"],
+    },
+    r"\.intel_syntax|\.att_syntax|ambiguous operand size": {
+        "titulo": "Sintaxis Intel vs AT&T",
+        "explicacion": "Mezcla de sintaxis o tamaño de operando ambiguo en modo Intel.",
+        "soluciones": [".intel_syntax noprefix explícito", "Sufijos de tamaño en Intel"],
+    },
+    r"\.weak|weak symbol|multiple definition of.*weak": {
+        "titulo": "Símbolo weak",
+        "explicacion": "Dos definiciones weak o interacción weak/strong en enlace.",
+        "soluciones": ["Una definición strong", "Linkeo y órden de objetos"],
+    },
+    r"assembly fails for program|LLVM ERROR.*inline assembly": {
+        "titulo": "Inline asm (LLVM IR)",
+        "explicacion": "rustc/clang inline assembly con constraint inválido.",
+        "soluciones": ["llvm_asm! / asm! documentación", "clobber list completo"],
+    },
+    r"Error: alignment must be a power of 2|balign.*not a power": {
+        "titulo": "Alineación potencia de 2",
+        "explicacion": ".balign/.align con valor no potencia de dos.",
+        "soluciones": ["Corregí el argumento numérico"],
+    },
+    r"Error: symbol `.*' is already defined": {
+        "titulo": "Símbolo duplicado en asm",
+        "explicacion": "Etiqueta o .globl definido dos veces en el mismo .s.",
+        "soluciones": ["Renombrá etiqueta", "Unifica definición"],
+    },
+    r"Error: junk at end of line.*\.s": {
+        "titulo": "Basura al final de línea",
+        "explicacion": "Caracteres sobrantes tras el mnemónico (comentario mal formado).",
+        "soluciones": ["# o // según sintaxis", "Comas entre operandos"],
+    },
+    r"SPARC|sparc.*:.*error": {
+        "titulo": "SPARC",
+        "explicacion": "Delay slots, ventanas de registro o sintaxis v9.",
+        "soluciones": ["Manual SPARC V8/V9", "Flags del ensamblador"],
+    },
+    r"avr-as:|AVR Assembler|\.arch avr": {
+        "titulo": "AVR (8-bit)",
+        "explicacion": "Mnemónico, registro o directiva fuera del subset del MCU (ATmega/ATtiny).",
+        "soluciones": ["-mmcu=", "Manual de instrucciones del dispositivo", "Relocs y flash vs RAM"],
+    },
+    r"xtensa-as:|Xtensa assembler|ERROR at .*xtensa": {
+        "titulo": "Xtensa / ESP32",
+        "explicacion": "Sintaxis o opción de ensamblado no coincide con el core Xtensa configurado.",
+        "soluciones": ["Triple y -mtarget", "SDK ESP-IDF / toolchain alineados"],
+    },
 }

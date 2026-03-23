@@ -406,4 +406,234 @@ ERRORES_JS = {
         "explicacion": "Variable, parámetro o función no usada con noUnusedLocals/noUnusedParameters.",
         "soluciones": ["Eliminá o usá", "prefijo _ en parámetros", "ajustá tsconfig si es ruido"],
     },
+    r"TS2591:|Cannot find name 'module'": {
+        "titulo": "TS2591 — module en Node types",
+        "explicacion": "Usás `module` o `require` sin tipos de Node (@types/node).",
+        "soluciones": ["npm i -D @types/node", "types en tsconfig"],
+    },
+    r"TS1472:|catch or finally expected": {
+        "titulo": "TS1472 — try incompleto",
+        "explicacion": "Bloque try sin catch ni finally válido.",
+        "soluciones": ["Agregá catch o finally", "Balanceá llaves"],
+    },
+    r"TS1484:|.*is a type and must be imported using a type-only import": {
+        "titulo": "TS1484 — import type",
+        "explicacion": "verbatimModuleSyntax o aislamiento: el símbolo es solo tipo y debe importarse con `import type`.",
+        "soluciones": ["import type { T }", "export type"],
+    },
+    r"TS2209:|The project root is ambiguous": {
+        "titulo": "TS2209 — raíz ambigua",
+        "explicacion": "Varios tsconfig compiten; tsc no elige proyecto único.",
+        "soluciones": ["-p tsconfig.json explícito", "references en solution style"],
+    },
+    r"TS5098:|Option .* can only be used when": {
+        "titulo": "TS5098 — opción tsconfig incompatible",
+        "explicacion": "Combinación moduleResolution / module / bundler no permitida en esa versión.",
+        "soluciones": ["Alineá module y moduleResolution según doc de TS", "Subí versión de TypeScript"],
+    },
+    r"ERR_INVALID_URL|TypeError: Invalid URL": {
+        "titulo": "URL inválida",
+        "explicacion": "new URL() o fetch con string mal formado o esquema ausente.",
+        "soluciones": ["Base URL en segundo arg", "encodeURIComponent en query"],
+    },
+    r"ERR_HTTP_HEADERS_SENT|Cannot set headers after they are sent": {
+        "titulo": "Headers ya enviados",
+        "explicacion": "En Express/Node intentás setHeader o send después de iniciar la respuesta.",
+        "soluciones": ["Un solo res.send/end", "return tras error handler"],
+    },
+    r"Circular dependency detected|Cannot access .* before initialization": {
+        "titulo": "Dependencia circular (módulos)",
+        "explicacion": "Import circular deja bindings en temporal dead zone o undefined.",
+        "soluciones": ["Extraé código común a tercer módulo", "import dinámico import()", "Refactor de capas"],
+    },
+    r"TypeError: Assignment to constant variable": {
+        "titulo": "Asignación a constante",
+        "explicacion": "Reasignás a const (o binding de import).",
+        "soluciones": ["Usá let", "No reasignés imports"],
+    },
+    r"ReferenceError: Cannot access .* before initialization": {
+        "titulo": "TDZ — acceso antes de inicializar",
+        "explicacion": "Leés let/const/class antes de su línea de inicialización.",
+        "soluciones": ["Reordená declaraciones", "evitá ciclos de inicialización"],
+    },
+    r"SyntaxError: Identifier .* has already been declared": {
+        "titulo": "Identificador duplicado (JS)",
+        "explicacion": "let/const/class con el mismo nombre dos veces en el mismo bloque.",
+        "soluciones": ["Renombrá", "Fusioná declaraciones"],
+    },
+    r"TS4111:|Property comes from an index signature": {
+        "titulo": "TS4111 — index signature estricta",
+        "explicacion": "noPropertyAccessFromIndexSignature: no podés usar dot con claves de índice.",
+        "soluciones": ["obj['key'] con corchetes", "Record<K,V> explícito"],
+    },
+    r"TS4114:|The member .* must be an object literal": {
+        "titulo": "TS4114 — override literal",
+        "explicacion": "override en campo de clase exige objeto literal en algunas configuraciones estrictas.",
+        "soluciones": ["Objeto inline o ajustá la regla", "Revisá versión TS"],
+    },
+    r"TS7027:|Unreachable code detected": {
+        "titulo": "TS7027 — código inalcanzable",
+        "explicacion": "allowUnreachableCode off: código después de return/throw.",
+        "soluciones": ["Eliminá código muerto", "Corregí la condición"],
+    },
+    r"TS7022:|.*implicitly has type 'any'": {
+        "titulo": "TS7022 — any implícito (variable)",
+        "explicacion": "Variable sin inicializador y sin anotación; inferencia cae en any.",
+        "soluciones": ["Tipo explícito o inicializador", "noImplicitAny"],
+    },
+    r"TS7023:|.*implicitly has return type 'any'": {
+        "titulo": "TS7023 — any en retorno de función",
+        "explicacion": "Función sin tipo de retorno anotado y cuerpo no infiere bien.",
+        "soluciones": ["Anotá : ReturnType", "return explícitos en todas las ramas"],
+    },
+    r"ERR_USE_AFTER_CLOSE|write after end": {
+        "titulo": "Stream cerrado",
+        "explicacion": "Escribís en stream o socket después de end/destroy.",
+        "soluciones": ["Evento 'finish' antes de más writes", "Revisá piping"],
+    },
+    r"FATAL ERROR:.*Allocation failed|Ineffective mark-compacts": {
+        "titulo": "V8 — compactación / memoria",
+        "explicacion": "GC no pudo liberar suficiente; heap muy fragmentado o presión extrema.",
+        "soluciones": ["--max-old-space-size", "Reducí retención de objetos grandes"],
+    },
+    r"TS1002:|TS1005:|TS1009:|TS1010:": {
+        "titulo": "TS100x — carácter o token",
+        "explicacion": "Lexer/parser: string sin cerrar, token inesperado o faltante.",
+        "soluciones": ["Comillas y backticks balanceados", "JSX solo con jsx en tsconfig"],
+    },
+    r"TS1127:|TS1128:|TS1160:": {
+        "titulo": "TS1127 — unterminated template",
+        "explicacion": "Template literal sin cerrar o comentario sin fin.",
+        "soluciones": ["Cerrá ` y ${}", "Anidar template con escape"],
+    },
+    r"TS17004:|TS17008:|TS2604:|JSX element": {
+        "titulo": "TS17004 — JSX",
+        "explicacion": "Archivo .ts con JSX o falta factory React.",
+        "soluciones": ["Renombrá a .tsx", "jsx en tsconfig", "jsxImportSource"],
+    },
+    r"TS2515:|TS2654:|TS2656:": {
+        "titulo": "TS25xx — abstract / super",
+        "explicacion": "Instanciás clase abstracta o super() mal en derived.",
+        "soluciones": ["Implementá métodos abstractos", "super() antes de this en ctor"],
+    },
+    r"TS2678:|TS1360:": {
+        "titulo": "TS2678 — switch / equality",
+        "explicacion": "Comparación en switch o === siempre false por tipos disjuntos.",
+        "soluciones": ["Unificá tipos", "Discriminated union"],
+    },
+    r"TS2365:|TS2362:|TS2363:": {
+        "titulo": "TS236x — operador aritmético",
+        "explicacion": "Operador aritmético aplicado a tipos no numéricos o mezcla ilegal.",
+        "soluciones": ["Number()", "Narrowing", "BigInt consistente"],
+    },
+    r"TS2347:|TS2556:": {
+        "titulo": "TS2347/2556 — spread / rest",
+        "explicacion": "Spread sobre no-iterable o demasiados args para rest.",
+        "soluciones": ["Array.isArray", "Tupla con longitud fija"],
+    },
+    r"TS2578:|TS7028:": {
+        "titulo": "TS2578 — label / unused",
+        "explicacion": "Label sin uso o JSX spread booleano sospechoso.",
+        "soluciones": ["Eliminá label muerto", "Revisá {...cond && x}"],
+    },
+    r"TS6307:|TS1470:": {
+        "titulo": "TS6307 — archivo no es módulo",
+        "explicacion": "Proyecto references / bundler espera módulo y el archivo es script global.",
+        "soluciones": ["export {}", "isolatedModules", "include en tsconfig"],
+    },
+    r"TS2358:|TS1361:": {
+        "titulo": "TS2358 — import type vs value",
+        "explicacion": "Usás como valor algo importado solo como tipo (verbatimModuleSyntax).",
+        "soluciones": ["import type separado", "import normal para valor"],
+    },
+    r"TS2790:|TS2792:": {
+        "titulo": "TS279x — operand delete",
+        "explicacion": "delete sobre propiedad no opcional o readonly.",
+        "soluciones": ["Omit en tipo", "Rest object sin la key"],
+    },
+    r"ZodError|zod\.ZodError": {
+        "titulo": "Zod",
+        "explicacion": "Schema Zod rechazó el parse (coerce, refine, union).",
+        "soluciones": ["error.flatten()", ".safeParse()", "Mensajes .issues"],
+    },
+    r"SyntaxError: await is only valid in async function": {
+        "titulo": "await fuera de async (JS)",
+        "explicacion": "await en función no async o en top-level sin soporte de módulo.",
+        "soluciones": ["async function", "type module + engines que soporten TLA"],
+    },
+    r"TypeError: Converting circular structure to JSON": {
+        "titulo": "JSON circular",
+        "explicacion": "JSON.stringify encontró referencia circular.",
+        "soluciones": ["Replacer con seen Set", "DTO sin ciclos"],
+    },
+    r"URIError:|decodeURI|encodeURI": {
+        "titulo": "URIError",
+        "explicacion": "decodeURIComponent con secuencia % inválida.",
+        "soluciones": ["Validá input", "try/catch"],
+    },
+    r"ERR_UNKNOWN_FILE_EXTENSION|ERR_UNKNOWN_BUILTIN_MODULE": {
+        "titulo": "Node — extensión o builtin",
+        "explicacion": "Node no reconoce la extensión sin loader o builtin inexistente.",
+        "soluciones": ["--experimental-loader", "Extensión .cjs/.mjs explícita"],
+    },
+    r"ERR_UNSUPPORTED_DIR_IMPORT|ERR_PACKAGE_PATH_NOT_EXPORTED": {
+        "titulo": "Node — exports / directorio",
+        "explicacion": "import de carpeta sin index resuelto o path no exportado en package.json.",
+        "soluciones": ["exports field del paquete", "Import archivo concreto"],
+    },
+    r"ERR_WORKER_OUT_OF_MEMORY|ERR_WORKER_UNSERIALIZABLE": {
+        "titulo": "worker_threads",
+        "explicacion": "Worker sin memoria o postMessage con estructura no clonable.",
+        "soluciones": ["Structured clone rules", "Transferable buffers", "Más heap al worker"],
+    },
+    r"ERR_INTERNAL_ASSERTION|Assertion failed:": {
+        "titulo": "Node — aserción interna",
+        "explicacion": "Bug o estado corrupto en Node/libuv (raro).",
+        "soluciones": ["Actualizá Node LTS", "Repro mínima para issue"],
+    },
+    r"Transform failed with.*error|Parse error.*esbuild": {
+        "titulo": "esbuild / transform",
+        "explicacion": "Parse o transform falló en herramienta (sintaxis, target).",
+        "soluciones": ["target es2020", "Sintaxis soportada por esbuild"],
+    },
+    r"WebAssembly\.(Compile|Link|Runtime)Error": {
+        "titulo": "WebAssembly",
+        "explicacion": "Wasm inválido, import faltante o trap en runtime.",
+        "soluciones": ["wasm-validate", "Imports alinear con instancia"],
+    },
+    r"TransformStream|ReadableStream.*locked": {
+        "titulo": "Streams (WHATWG)",
+        "explicacion": "Stream ya tiene reader locked o tee mal usado.",
+        "soluciones": ["Un reader a la vez", "Tee antes de consumir"],
+    },
+    r"DOMException.*QuotaExceededError": {
+        "titulo": "QuotaExceededError",
+        "explicacion": "localStorage/indexedDB superó cuota del origen.",
+        "soluciones": ["Limpiá storage", "Pedir persistencia", "estimate()"],
+    },
+    r"AggregateError:|Promise any": {
+        "titulo": "AggregateError",
+        "explicacion": "Promise.any rechazó todas; varias razones en .errors.",
+        "soluciones": ["Revisá errors[]", "Promise.allSettled para diagnóstico"],
+    },
+    r"TypeError: Failed to fetch|TypeError: Load failed|fetch failed": {
+        "titulo": "fetch / red (runtime)",
+        "explicacion": "El navegador o runtime rechazó la petición (CORS, red, certificado, URL inválida).",
+        "soluciones": ["Consola red / Network tab", "CORS en servidor", "HTTPS y certificados"],
+    },
+    r"TS2589:.*(excessively deep|too complex|infinite)": {
+        "titulo": "TS2589 — tipos demasiado profundos",
+        "explicacion": "Instanciación recursiva de tipos (mapped types, inferencia) supera el límite del checker.",
+        "soluciones": ["Simplificá genéricos", "Tipo intermedio nominal", "typescript@next vs estable"],
+    },
+    r"ERR_DLOPEN_FAILED|Error loading shared library|dlopen": {
+        "titulo": "Módulo nativo (dlopen)",
+        "explicacion": "addon .node o .so no carga: ruta, GLIBC, arquitectura o dependencia faltante.",
+        "soluciones": ["ldd / otool", "Recompilar addon para tu Node/OS", "LD_LIBRARY_PATH"],
+    },
+    r"SyntaxError: Unexpected token 'export'|Unexpected token 'import'": {
+        "titulo": "Sintaxis ESM en script",
+        "explicacion": "import/export en archivo interpretado como script clásico (no module).",
+        "soluciones": ["type module en package.json", "extensión .mjs", "Bundler que transpile"],
+    },
 }

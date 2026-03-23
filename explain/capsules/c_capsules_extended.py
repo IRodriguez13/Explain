@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from explain.capsules.c_capsules_gap import CAPSULES_C_GAP
+from explain.capsules.support_extension_capsules import (
+    CAPSULES_SUPPORT_C,
+    CAPSULES_SUPPORT_C_WARN,
+)
 
 CAPSULES_C_EXTENDED: dict[str, dict[str, Any]] = {
     r"dereferencing pointer to incomplete type": {
@@ -561,6 +565,8 @@ typedef long foo_t;""",
         "que_paso": "Conversión implícita que puede cambiar valor o representación.",
         "regla": "Cast explícito o sufijos `f`/`u`/`L` adecuados; revisá fronteras numéricas.",
     },
+    **CAPSULES_SUPPORT_C,
+    **CAPSULES_SUPPORT_C_WARN,
     **CAPSULES_C_GAP,
 }
 

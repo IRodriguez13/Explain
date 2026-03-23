@@ -8,7 +8,20 @@ from typing import Any
 from explain.capsules.csharp_capsules import CAPSULES_CSHARP_HANDWRITTEN
 from explain.capsules.js_priority_capsules import CAPSULES_JS_PRIORITY
 from explain.capsules.python_priority_capsules import CAPSULES_PYTHON_PRIORITY
+from explain.capsules.man_coverage_bulk import (
+    MAN_CSHARP_GAP_FILL,
+    MAN_JS_GAP_FILL,
+    MAN_PYTHON_GAP_FILL,
+    MAN_RUST_GAP_FILL,
+)
 from explain.capsules.rust_capsules import CAPSULES_RUST_HANDWRITTEN
+from explain.capsules.support_extension_capsules import (
+    CAPSULES_SUPPORT_CSHARP,
+    CAPSULES_SUPPORT_CSHARP_FW,
+    CAPSULES_SUPPORT_JS,
+    CAPSULES_SUPPORT_PYTHON,
+    CAPSULES_SUPPORT_RUST,
+)
 
 # --- Python (vanilla + warnings) ---
 CAPSULES_PYTHON_EXTRA: dict[str, dict[str, Any]] = {
@@ -520,10 +533,31 @@ export function Cliente() { ... }""",
 }
 
 HANDWRITTEN_BY_LANG: dict[str, dict[str, dict[str, Any]]] = {
-    "Python": {**CAPSULES_PYTHON_EXTRA, **CAPSULES_PYTHON_PRIORITY, **CAPSULES_PYTHON_FW_EXTRA},
-    "JavaScript": {**CAPSULES_JS_EXTRA, **CAPSULES_JS_PRIORITY, **CAPSULES_JS_FW_EXTRA},
-    "Rust": dict(CAPSULES_RUST_HANDWRITTEN),
-    "C#": dict(CAPSULES_CSHARP_HANDWRITTEN),
+    "Python": {
+        **CAPSULES_PYTHON_EXTRA,
+        **CAPSULES_PYTHON_PRIORITY,
+        **CAPSULES_PYTHON_FW_EXTRA,
+        **MAN_PYTHON_GAP_FILL,
+        **CAPSULES_SUPPORT_PYTHON,
+    },
+    "JavaScript": {
+        **CAPSULES_JS_EXTRA,
+        **CAPSULES_JS_PRIORITY,
+        **CAPSULES_JS_FW_EXTRA,
+        **MAN_JS_GAP_FILL,
+        **CAPSULES_SUPPORT_JS,
+    },
+    "Rust": {
+        **dict(CAPSULES_RUST_HANDWRITTEN),
+        **MAN_RUST_GAP_FILL,
+        **CAPSULES_SUPPORT_RUST,
+    },
+    "C#": {
+        **dict(CAPSULES_CSHARP_HANDWRITTEN),
+        **MAN_CSHARP_GAP_FILL,
+        **CAPSULES_SUPPORT_CSHARP,
+        **CAPSULES_SUPPORT_CSHARP_FW,
+    },
 }
 
 __all__ = ["HANDWRITTEN_BY_LANG"]

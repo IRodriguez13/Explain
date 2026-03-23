@@ -1,8 +1,34 @@
 .venv/
 .venv-ci/
+.venv-cov/
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
+.eggs/
 dist/
 build/
 .staging/
+
+# Cobertura y tests
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# pytest
+.pytest_cache/
+
+# Herramientas de tipos / linters (si se usan en el clone)
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Entornos / IDE
+.env
+.env.local
+*.swp
+*.swo
+*~
+.DS_Store

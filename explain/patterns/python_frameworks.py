@@ -171,4 +171,124 @@ ERRORES_PYTHON_FW = {
         "explicacion": "Fallo al cargar ASGI, puerto ocupado o excepción en el worker.",
         "soluciones": ["Otro --port", "Traceback de import de app:factory", "Logs con --log-level debug"],
     },
+    r"aiohttp\.(ClientError|ClientConnectorError|ClientResponseError|ServerDisconnectedError)": {
+        "titulo": "aiohttp — cliente",
+        "explicacion": "Conexión TLS/DNS, respuesta HTTP de error o servidor cerró el socket.",
+        "soluciones": ["resp.raise_for_status()", "timeout en ClientSession", "Reintentos con backoff"],
+    },
+    r"botocore\.exceptions\.(ClientError|BotoCoreError|EndpointConnectionError|NoCredentialsError)": {
+        "titulo": "boto3 / botocore",
+        "explicacion": "AWS rechazó la operación, región/endpoint incorrecto o credenciales ausentes.",
+        "soluciones": ["e.response['Error']", "IAM y región", "~/.aws/credentials o variables de entorno"],
+    },
+    r"grpc\.(RpcError|_channel\._InactiveRpcError)|StatusCode\.(UNAVAILABLE|DEADLINE_EXCEEDED)": {
+        "titulo": "gRPC (Python)",
+        "explicacion": "Canal caído, deadline excedido o código de estado del servidor.",
+        "soluciones": ["grpc.keepalive options", "Stub con channel seguro", "Revisá logs del servicio"],
+    },
+    r"openai\.(AuthenticationError|RateLimitError|APIError|APITimeoutError)": {
+        "titulo": "OpenAI (SDK)",
+        "explicacion": "API key inválida, cuota/límite o error 5xx/timeout del endpoint.",
+        "soluciones": ["OPENAI_API_KEY", "Reintentos y exponential backoff", "Modelo y región disponibles"],
+    },
+    r"anthropic\.(AuthenticationError|RateLimitError|APIError|APIConnectionError)": {
+        "titulo": "Anthropic (Claude SDK)",
+        "explicacion": "API key, rate limit o error de red/5xx en Messages API.",
+        "soluciones": ["ANTHROPIC_API_KEY", "max_tokens y modelo", "Reintentos"],
+    },
+    r"langchain\.|langchain_core\.|langgraph\.": {
+        "titulo": "LangChain / LangGraph",
+        "explicacion": "Cadena de LLM, tool o grafo falló (parser, retriever, checkpointer).",
+        "soluciones": ["verbose=True", "Callbacks y logs del nodo", "Schema de salida"],
+    },
+    r"numpy\.exceptions\.|numpy\.(AxisError|LinAlgError|DTypePromotionError)": {
+        "titulo": "NumPy",
+        "explicacion": "Forma incompatible, eje inválido, SVD singular o promoción de dtype.",
+        "soluciones": [".shape", "np.newaxis", "astype explícito"],
+    },
+    r"pandas\.errors\.(EmptyDataError|ParserError|MergeError|OutOfBoundsDatetime|SettingWithCopyWarning)": {
+        "titulo": "pandas",
+        "explicacion": "CSV vacío, parseo, merge de claves o datetime fuera de rango.",
+        "soluciones": ["read_csv opciones", "merge how/on", "copy() antes de mutar"],
+    },
+    r"torch\.(cuda\.)?OutOfMemoryError|CUDA out of memory": {
+        "titulo": "PyTorch — CUDA OOM",
+        "explicacion": "GPU sin VRAM suficiente para tensores o batch.",
+        "soluciones": ["batch más chico", "torch.cuda.empty_cache()", "gradient checkpointing"],
+    },
+    r"tensorflow\.errors\.|tf\.errors\.": {
+        "titulo": "TensorFlow",
+        "explicacion": "Op falló, forma inválida, recurso no encontrado en TF.",
+        "soluciones": ["tf.config GPU", "run_options", "Código de error TF"],
+    },
+    r"keras\.|ValueError.*Keras": {
+        "titulo": "Keras",
+        "explicacion": "Modelo, capa o input_shape inconsistente.",
+        "soluciones": ["model.summary()", "Input layer explícita", "Versión Keras 2 vs 3"],
+    },
+    r"sklearn\.exceptions\.|ConvergenceWarning": {
+        "titulo": "scikit-learn",
+        "explicacion": "Datos no finitos, convergencia no alcanzada o shapes incompatibles.",
+        "soluciones": ["SimpleImputer/scale", "max_iter", "X.shape vs n_features_in_"],
+    },
+    r"scipy\.(sparse\.)?|LinAlgError|OptimizeWarning": {
+        "titulo": "SciPy",
+        "explicacion": "Álgebra lineal, optimización o sparse: matriz singular o mal condicionada.",
+        "soluciones": ["Condición de la matriz", "Método distinto en optimize"],
+    },
+    r"matplotlib\.|RuntimeError.*GUI backend": {
+        "titulo": "Matplotlib",
+        "explicacion": "Backend sin display (headless) o figura cerrada.",
+        "soluciones": ["MPLBACKEND=Agg", "plt.switch_backend('Agg')"],
+    },
+    r"PIL\.|Pillow\.|Image\.DecompressionBombError": {
+        "titulo": "Pillow (PIL)",
+        "explicacion": "Imagen corrupta, formato no soportado o decompression bomb.",
+        "soluciones": ["Image.MAX_IMAGE_PIXELS", "verify()", "Formato explícito"],
+    },
+    r"lxml\.(etree\.)?(XMLSyntaxError|XPathEvalError|DocumentError)": {
+        "titulo": "lxml",
+        "explicacion": "XML/HTML mal formado o XPath inválido.",
+        "soluciones": ["recover parser", "XPath 1.0 syntax", "encoding"],
+    },
+    r"beautifulsoup\.|FeatureNotFound|ParserRejectedMarkup": {
+        "titulo": "BeautifulSoup",
+        "explicacion": "Parser html.parser vs lxml; markup rechazado.",
+        "soluciones": ["pip install lxml", "soup.prettify y estructura"],
+    },
+    r"kubernetes\.(client\.|config\.)|ApiException": {
+        "titulo": "kubernetes (cliente Python)",
+        "explicacion": "API server 4xx/401 o kubeconfig inválido.",
+        "soluciones": ["load_kube_config", "reason y status en ApiException"],
+    },
+    r"docker\.errors\.(APIError|DockerException|ImageNotFound|NotFound)": {
+        "titulo": "docker-py",
+        "explicacion": "Daemon rechazó operación o imagen/contenedor inexistente.",
+        "soluciones": ["from_env()", "APIError.explanation", "docker.sock permisos"],
+    },
+    r"bandit\.|B608|B701": {
+        "titulo": "Bandit (security linter)",
+        "explicacion": "Regla de seguridad en código Python (SQL injection, binding 0.0.0.0, etc.).",
+        "soluciones": ["Mensaje del issue", "Parametrize queries", "skip solo con justificación"],
+    },
+    r"ruff.*error|RUF\d{3}": {
+        "titulo": "Ruff",
+        "explicacion": "Linter/formateador Ruff reportó violación o error de parseo.",
+        "soluciones": ["ruff check --fix", "pyproject [tool.ruff]"],
+    },
+    r"mypy: error:|error:.*\[mypy\]": {
+        "titulo": "mypy",
+        "explicacion": "Chequeo estático de tipos falló.",
+        "soluciones": ["Anotaciones", "typing.cast", "ignore comentario acotado"],
+    },
+    r"sphinx\.errors\.|SphinxError|ExtensionError": {
+        "titulo": "Sphinx",
+        "explicacion": "Build de documentación: extensión o directive falló.",
+        "soluciones": ["conf.py extensions", "Traceback del builder"],
+    },
+    r"coverage\.exceptions\.|CoverageException": {
+        "titulo": "coverage.py",
+        "explicacion": "Data file corrupto, source mismatch o config inválida.",
+        "soluciones": ["coverage erase", "parallel=true coherente", "paths en .coveragerc"],
+    },
 }

@@ -91,4 +91,104 @@ ERRORES_JS_FW = {
         "explicacion": "En el App Router, un Server Component importó algo que usa estado o efectos solo válidos en cliente.",
         "soluciones": ["'use client' en el archivo hijo", "dynamic(..., { ssr: false }) si aplica", "Separá capas"],
     },
+    r"Svelte.*Error|ParseError.*svelte|svelte\(compiler\)": {
+        "titulo": "Svelte / SvelteKit",
+        "explicacion": "Compilador Svelte: sintaxis de componente, store o runes.",
+        "soluciones": ["Mensaje en columna", "svelte-check", "Versión compiler vs kit"],
+    },
+    r"Solid.*Error|solid-js": {
+        "titulo": "SolidJS",
+        "explicacion": "Reactivity, JSX o recurso async falló en runtime/build.",
+        "soluciones": ["createResource", "Show/For correctos", "vite-plugin-solid"],
+    },
+    r"Astro.*Error|astro/dist|Unable to locate": {
+        "titulo": "Astro",
+        "explicacion": "Build estático, integración o content collection falló.",
+        "soluciones": ["astro check", "Integraciones en astro.config", "frontmatter MD"],
+    },
+    r"Remix.*Error|@remix-run|Thrown Response": {
+        "titulo": "Remix",
+        "explicacion": "Loader/action lanzó o boundary de error capturó.",
+        "soluciones": ["json() vs throw redirect", "ErrorBoundary en route"],
+    },
+    r"TanStack Query|react-query|QueryClient.*error": {
+        "titulo": "TanStack Query",
+        "explicacion": "QueryFn falló o retry agotado; error en caché.",
+        "soluciones": ["queryClient.getQueryData", "throwOnError", "staleTime"],
+    },
+    r"MSW|MockServiceWorker|intercepted unhandled request": {
+        "titulo": "MSW (Mock Service Worker)",
+        "explicacion": "Petición no mockeada o handler mal registrado.",
+        "soluciones": ["server.listen", "http.get pattern", "onUnhandledRequest"],
+    },
+    r"Vitest|vitest.*Error|AssertionError.*vitest": {
+        "titulo": "Vitest",
+        "explicacion": "Test falló, mock o pool de workers.",
+        "soluciones": ["expect vs toEqual", "vi.mock hoisting", "pool: forks"],
+    },
+    r"CypressError|Testing Library.*(Unable to find|Found multiple)": {
+        "titulo": "Cypress / Testing Library",
+        "explicacion": "Elemento no encontrado, timeout o aserción fallida en E2E.",
+        "soluciones": ["data-cy", "should('exist')", "cy.intercept"],
+    },
+    r"Playwright.*Error|@playwright/test": {
+        "titulo": "Playwright (test runner)",
+        "explicacion": "Timeout de acción, selector estricto o trace en fallo.",
+        "soluciones": ["getByRole", "expect.poll", "trace on first retry"],
+    },
+    r"webpack.*Module not found|ModuleNotFoundError.*Can't resolve": {
+        "titulo": "Webpack — módulo",
+        "explicacion": "Resolve falló (alias, node_modules, extensión).",
+        "soluciones": ["resolve.extensions", "alias", "externals"],
+    },
+    r"tailwindcss.*Error|CssSyntaxError.*tailwind": {
+        "titulo": "Tailwind CSS",
+        "explicacion": "content paths mal, @apply inválido o plugin.",
+        "soluciones": ["tailwind.config content", "PostCSS order"],
+    },
+    r"postcss.*Error|Unknown word|PluginError": {
+        "titulo": "PostCSS",
+        "explicacion": "Parser CSS o plugin falló en la pipeline.",
+        "soluciones": ["Syntax del archivo", "Orden de plugins"],
+    },
+    r"sass.*Error|expected.*scss": {
+        "titulo": "Sass/SCSS",
+        "explicacion": "Sintaxis SCSS, variable o mixin inexistente.",
+        "soluciones": ["@use vs @import", "Variables definidas antes"],
+    },
+    r"graphql.*Error|GraphQLError|ApolloError": {
+        "titulo": "GraphQL (cliente)",
+        "explicacion": "Errores en response.extensions o red hacia el endpoint.",
+        "soluciones": ["errors[] en body", "Apollo link retry", "Schema introspection"],
+    },
+    r"socket\.io.*Error|Engine\.io": {
+        "titulo": "Socket.IO",
+        "explicacion": "Handshake, CORS o versión cliente/servidor incompatible.",
+        "soluciones": ["cors en Server", "path y transports"],
+    },
+    r"three\.js|THREE\.|WebGLRenderer": {
+        "titulo": "Three.js / WebGL",
+        "explicacion": "Shader compile, textura o contexto WebGL lost.",
+        "soluciones": ["Renderer.info", "Potencia de 2 en texturas", "webgl context lost handler"],
+    },
+    r"d3.*Error|d3-": {
+        "titulo": "D3.js",
+        "explicacion": "Selección vacía, escala con dominio inválido o datos NaN.",
+        "soluciones": ["selectAll size", "domain/range finitos"],
+    },
+    r"monaco-editor|Monaco.*worker": {
+        "titulo": "Monaco Editor",
+        "explicacion": "Worker de TS/CSS no cargado o path de assets incorrecto.",
+        "soluciones": ["MonacoEnvironment.getWorkerUrl", "Copy webpack plugin"],
+    },
+    r"eslint.*Parsing error|eslint-plugin": {
+        "titulo": "ESLint — parse",
+        "explicacion": "Parser no entiende sintaxis (TS sin parser, JSX).",
+        "soluciones": ["@typescript-eslint/parser", "extends recomendados"],
+    },
+    r"prettier.*SyntaxError|prettier": {
+        "titulo": "Prettier",
+        "explicacion": "Archivo no parseable para el parser elegido.",
+        "soluciones": ["--parser", "Ignorar archivos generados"],
+    },
 }

@@ -190,4 +190,19 @@ WARNINGS_C = {
         "explicacion": "Pérdida de rango o cambio signed/unsigned implícito; en fronteras numéricas puede acabar en valores imposibles o UB indirecto.",
         "soluciones": ["Cast explícito documentado", "Tipos intermedios más anchos", "Comprobá límites antes de convertir"],
     },
+    r"warning:.*\[-Wshadow\]": {
+        "titulo": "Sombreado de variable (-Wshadow)",
+        "explicacion": "Un nombre local u oculta otro de un ámbito exterior; puede confundir lectura y depuración.",
+        "soluciones": ["Renombrá el interno", "static en file scope si aplica", "Desactivá -Wshadow solo con criterio"],
+    },
+    r"warning:.*\[-Wstrict-aliasing\]": {
+        "titulo": "Strict aliasing (-Wstrict-aliasing)",
+        "explicacion": "Se accede al mismo almacenamiento por punteros de tipos incompatibles; el optimizador puede asumir alias ilegales.",
+        "soluciones": ["memcpy / union con cuidado", "char* para bytes", "fstrict-aliasing=0 solo si es inevitable"],
+    },
+    r"warning:.*\[-Wjump-misses-init\]": {
+        "titulo": "Salto salta inicialización (-Wjump-misses-init)",
+        "explicacion": "goto o switch entra en un bloque saltando la inicialización de una variable automática.",
+        "soluciones": ["Envolvé en { } el init", "Evitá goto hacia declaraciones", "Inicializá antes del salto"],
+    },
 }

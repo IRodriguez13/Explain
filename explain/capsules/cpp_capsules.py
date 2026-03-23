@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from explain.capsules.man_coverage_bulk import MAN_CPP_GAP_FILL
+from explain.capsules.support_extension_capsules import CAPSULES_SUPPORT_CPP
+
 
 def _(
     mal: str,
@@ -309,6 +312,8 @@ CAPSULES_CPP_HANDWRITTEN: dict[str, dict[str, Any]] = {
         "Análisis estático infiere camino con nullptr.",
         "Comprobaciones, `optional`, contratos.",
     ),
+    **CAPSULES_SUPPORT_CPP,
+    **MAN_CPP_GAP_FILL,
 }
 
 __all__ = ["CAPSULES_CPP_HANDWRITTEN"]

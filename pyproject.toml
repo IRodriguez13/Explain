@@ -1,6 +1,6 @@
 [project]
 name = "explain-errors"
-version = "0.6.7"
+version = "0.6.8"
 description = "Explicador determinista de mensajes de compilación/ejecución (español, sin IA)"
 authors = [{name = "Iván Ezequiel Rodriguez"}]
 license = { file = "LICENSE" }

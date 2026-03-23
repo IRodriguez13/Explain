@@ -312,4 +312,159 @@ ERRORES_C = {
         "explicacion": "Declarás un struct/union/enum que solo fue declarado adelante.",
         "soluciones": ["Incluí el .h con la definición completa", "Puntero en lugar de valor embebido"],
     },
+    r"undeclared \(first use in this function\)|undeclared identifier|error: .* undeclared": {
+        "titulo": "Identificador no declarado",
+        "explicacion": "Usás un nombre sin declaración previa visible (typo, falta include o variable de bucle mal escrita).",
+        "soluciones": ["Declará la variable o incluí el header", "Revisá scope de C99 for-loop"],
+    },
+    r"expected primary-expression|expected expression before|expected identifier before": {
+        "titulo": "Expresión o identificador esperado",
+        "explicacion": "Token donde el parser esperaba una expresión (coma extra, ; faltante arriba, macro mal cerrada).",
+        "soluciones": ["Mirá la línea anterior", "Balanceá paréntesis y comas en llamadas"],
+    },
+    r"incompatible types when assigning|incompatible types in assignment": {
+        "titulo": "Asignación entre tipos incompatibles",
+        "explicacion": "El RHS no convierte de forma válida al tipo de la variable.",
+        "soluciones": ["Cast explícito documentado", "Unificá tipos en la API", "Revisá punteros vs enteros"],
+    },
+    r"array type has incomplete element type": {
+        "titulo": "Array de tipo incompleto",
+        "explicacion": "Declarás T[] o T[N] donde T solo tiene forward declaration.",
+        "soluciones": ["Incluí la definición completa de T antes del array", "Array de punteros a T opaco"],
+    },
+    r"returning 'void' from a function with non-void return type": {
+        "titulo": "Retorno void en función con valor",
+        "explicacion": "Retornás una llamada void (o expresión sin valor) donde la función debe devolver un tipo concreto.",
+        "soluciones": ["Retorná un valor del tipo declarado", "Cambiá el tipo de retorno a void si corresponde"],
+    },
+    r"label .* referenced outside of any function|jump into scope of identifier|jump into statement": {
+        "titulo": "goto / salto inválido",
+        "explicacion": "goto a etiqueta fuera de función o salto que entra en scope de variable (VLA o inicialización).",
+        "soluciones": ["Etiqueta en la misma función", "Evitá goto sobre declaraciones C99"],
+    },
+    r"pointer targets in passing argument.*differ in signedness": {
+        "titulo": "Punteros con distinto signedness",
+        "explicacion": "Pasás char* donde esperan unsigned char* o viceversa (warning que a veces es error).",
+        "soluciones": ["Unificá signedness en la API", "Cast explícito si el contrato lo garantiza"],
+    },
+    r"excess elements in array initializer|array index in initializer exceeds array bounds": {
+        "titulo": "Inicializador de array incorrecto",
+        "explicacion": "Demasiados valores o índice de designator fuera del tamaño.",
+        "soluciones": ["Contá elementos vs tamaño declarado", "Designators [i] = coherente"],
+    },
+    r"function declaration isn't a prototype|-Wstrict-prototypes": {
+        "titulo": "Prototipo no prototipo (K&R)",
+        "explicacion": "Declaración sin tipos de parámetros; en C moderno suele ser error con flags estrictos.",
+        "soluciones": ["void foo(int a, char *b); con tipos", "Evitá () vacío en declaraciones"],
+    },
+    r"pointer of type 'void \*' used in arithmetic|arithmetic on a pointer to void": {
+        "titulo": "Aritmética sobre void*",
+        "explicacion": "GCC extension o código que asume sizeof(void); el estándar no permite p++ en void*.",
+        "soluciones": ["Cast a char* o uint8_t* para offset", "uintptr_t para direcciones"],
+    },
+    r"aggregate value used where an integer was expected": {
+        "titulo": "Struct/array donde va escalar",
+        "explicacion": "Usás un struct o array en contexto que exige entero o condición escalar.",
+        "soluciones": ["Compará campos", "memcmp o igualdad campo a campo"],
+    },
+    r"error:.*-Werror=format|-Wformat.*error|format.*expects a matching": {
+        "titulo": "printf/scanf — -Wformat / -Werror",
+        "explicacion": "Cadena de formato y argumentos no coinciden; con -Werror=format es error.",
+        "soluciones": ["Un especificador por argumento", "%zu size_t", "PRId32 macros"],
+    },
+    r"taking address of packed member|may result in an unaligned pointer value": {
+        "titulo": "Miembro packed y alineación",
+        "explicacion": "struct __attribute__((packed)): tomar & de campo puede violar alineación.",
+        "soluciones": ["memcpy a variable alineada", "Evitá & sobre packed"],
+    },
+    r"array subscript.*is above array bounds|-Warray-bounds": {
+        "titulo": "Índice fuera de bounds (estático)",
+        "explicacion": "El compilador detectó acceso fuera del array en tiempo de compilación o UBSan.",
+        "soluciones": ["Corregí el índice", "Tamaño del array"],
+    },
+    r"writing into constant|read-only section|\.rodata": {
+        "titulo": "Escritura en memoria de solo lectura",
+        "explicacion": "Modificás string literal o datos en rodata (UB en C).",
+        "soluciones": ["char[] mutable en stack", "strdup"],
+    },
+    r"pointer integer type mismatch|conversion to.*from pointer of different size": {
+        "titulo": "Puntero y entero distinto ancho",
+        "explicacion": "Cast entre puntero y entero con tamaños distintos (32/64 bits).",
+        "soluciones": ["uintptr_t", "intptr_t"],
+    },
+    r"requested alignment.*less than minimum|minimum alignment for type": {
+        "titulo": "Alineación insuficiente",
+        "explicacion": "_Alignas o atributo alignment menor que el mínimo del tipo.",
+        "soluciones": ["Alineación >= alignof(T)", "max_align_t"],
+    },
+    r"free\(\): invalid pointer|double free|corruption|malloc\(\):.*corruption|munmap_chunk\(\)|heap metadata": {
+        "titulo": "Heap corrupto / free inválido",
+        "explicacion": "glibc detectó double free, overflow que corrompe metadata o puntero inválido a free.",
+        "soluciones": ["Valgrind/ASan", "Un solo free por malloc", "No use-after-free"],
+    },
+    r"stack smashing detected|stack buffer overflow|\*\*\* stack smashing": {
+        "titulo": "Stack smashing (canary)",
+        "explicacion": "Desbordamiento de buffer en stack sobrescribió el canary.",
+        "soluciones": ["Límites en strcpy/sprintf", "fgets", "-fstack-protector"],
+    },
+    r"variable length array folded to constant|variable-sized object may not be initialized": {
+        "titulo": "VLA e inicialización",
+        "explicacion": "Combinación de VLA con inicializador no permitida por el estándar o el compilador.",
+        "soluciones": ["malloc + bucle", "Tamaño constante si podés"],
+    },
+    r"inline assembly|invalid 'asm'|operand constraints": {
+        "titulo": "inline asm (GCC)",
+        "explicacion": "Constraints de asm inline no satisfacen los operandos o clobber incorrecto.",
+        "soluciones": ["Manual extended asm", "Registro correcto en constraints"],
+    },
+    r"error:.*incomplete type.*function argument": {
+        "titulo": "Tipo incompleto en argumento",
+        "explicacion": "Pasás struct por valor cuando el tipo está incompleto en el caller.",
+        "soluciones": ["Puntero const struct*", "Include con definición completa"],
+    },
+    r"error:.*enumerated type mixed|enumeration value not handled in switch": {
+        "titulo": "Enum en switch",
+        "explicacion": "switch enum sin case completo y -Wswitch o default faltante con warning error.",
+        "soluciones": ["default:", "Todos los enumeradores", "pragma diagnostic"],
+    },
+    r"error:.*flexible array member not at end": {
+        "titulo": "Flexible array member",
+        "explicacion": "Solo el último miembro puede ser []; hay campos después.",
+        "soluciones": ["Reordená el struct", "Patrón header+dinámico"],
+    },
+    r"error:.*bit-field.*exceeds width|width of.*exceeds its type": {
+        "titulo": "Bit-field demasiado ancho",
+        "explicacion": "El ancho del campo de bits supera el contenedor.",
+        "soluciones": ["Tipo base más ancho", "Reducir bits"],
+    },
+    r"cannot optimize|ipa:|lto.*failed|LTO link": {
+        "titulo": "LTO / optimización IPA",
+        "explicacion": "Link-time optimization falló o objeto incompatible con LTO.",
+        "soluciones": ["-flto consistente en todos los .c", "Misma versión de compiler"],
+    },
+    r"fatal error: (out of memory|memory exhausted)|cannot allocate memory": {
+        "titulo": "Compilador sin memoria",
+        "explicacion": "gcc/clang agotó RAM (plantillas enormes, LTO, unidad de traducción gigante).",
+        "soluciones": ["Más RAM o swap", "Reducir -O / desactivar LTO en esa unidad", "Partir el .c o headers pesados"],
+    },
+    r"fatal error: (error writing to|could not write)": {
+        "titulo": "Fallo al escribir salida",
+        "explicacion": "No se pudo escribir .o, .i u otro temporal (disco lleno, permisos, NFS caído).",
+        "soluciones": ["df -h", "TMPDIR escribible", "Cuota de usuario"],
+    },
+    r"redeclaration of enumerator|enumerator .* redefined": {
+        "titulo": "Enumerador redefinido",
+        "explicacion": "El mismo nombre de enumerador aparece dos veces en un enum o tras includes.",
+        "soluciones": ["Renombrá el caso duplicado", "Include guards si el enum está en header"],
+    },
+    r"variable has incomplete type 'void'|variable of type void": {
+        "titulo": "void no es tipo de objeto",
+        "explicacion": "Declaraste una variable con tipo void; void solo sirve para retorno o puntero void*.",
+        "soluciones": ["Tipo concreto (char, struct, etc.)", "void* si necesitás opacidad"],
+    },
+    r"invalid application of 'sizeof' to void|sizeof\(void\)": {
+        "titulo": "sizeof(void)",
+        "explicacion": "sizeof no aplica a void (tamaño indefinido en C estándar).",
+        "soluciones": ["sizeof sobre tipo concreto", "sizeof *(ptr) si ptr es void*"],
+    },
 }

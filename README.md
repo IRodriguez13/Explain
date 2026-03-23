@@ -1,29 +1,30 @@
 # explain-errors
 
-**explain** traduce mensajes de compilación y ejecución al español usando **solo patrones en expresiones regulares** y textos fijos: **sin red ni modelos de lenguaje**. Es determinista y auditable: lo que explica está en el código.
+**explain** es una utilidad de línea de comandos que **clasifica y explica en español** mensajes de compilación y ejecución a partir **únicamente del texto de salida**: cada diagnóstico se contrasta con una base de **expresiones regulares** y textos asociados en el repositorio. **No utiliza red ni modelos de lenguaje.** El resultado es **determinista** y **auditable**: la explicación proviene solo de código y datos versionados.
 
-**Autor:** Iván Ezequiel Rodriguez · **versión 0.6.7** (también en `pyproject.toml` y `explain --version`).
+**Versión:** 0.6.8 (también en `pyproject.toml` y `explain --version`) · **Autor:** Iván Ezequiel Rodriguez · **Licencia:** [GPL-3.0](LICENSE) · **Copyright:** [COPYRIGHT](COPYRIGHT)
 
-**Licencia:** [GNU General Public License v3.0](LICENSE) (GPL-3.0). Resumen de copyright en [COPYRIGHT](COPYRIGHT).
+## Estado actual del sistema
 
-## Qué hace
+| Componente | Descripción |
+|------------|-------------|
+| **Lenguajes soportados** | C, C++, Assembly, C#, Python, JavaScript (incluye salidas típicas de TypeScript/`tsc` en la base JS), Rust |
+| **Base de patrones** | ~**1190** entradas (regex → título, explicación, soluciones) en `explain/patterns/`: núcleo por lenguaje, módulos `*_warnings.py`, `*_frameworks.py` y Assembly (varias ISAs en mensaje) |
+| **Cápsulas didácticas** | Para cada clave de la base existe registro en `explain/capsules/` (fichas detalladas y entradas de cobertura amplia). Con `--man` / `-f` / `-F`, si un patrón no tuviera cápsula persistida, en lenguajes admitidos se usaría una ficha **sintética** generada desde la base; hoy la cobertura por clave está completa para los lenguajes anteriores |
+| **`--man-all`** | Lista fichas usando **solo** cápsulas definidas en `explain/capsules/` (no sintéticas en memoria). Orden: errores, advertencias, ítems UB-RISK |
+| **Emparejamiento** | `explain/pattern_index.py`: regex compilados, caché por identidad del diccionario de patrones, **índice invertido** por tokens alfanuméricos para acotar qué patrones se evalúan |
+| **Extracción de contexto** | `explain/extract.py`: archivo, línea, columna, severidad y símbolo cuando el formato del log lo permite (p. ej. GCC/Clang, MSVC, trazas Python/Node/TS, Rust) |
+| **`--ub-hints`** | Indicadores heurísticos de **posible comportamiento indefinido** solo para **C**, **C++** y **Assembly**, condicionados a señales en comando o salida (sanitizers, flags de advertencia, etiquetas `[-W…]`, etc.). En otros lenguajes la opción se **desactiva de forma explícita** en la salida. **No** inspecciona código fuente |
+| **Entrega** | CLI (`explain.cli`), página **man**, completions **bash** / **zsh** / **fish**, tests (`unittest`, sin dependencias de terceros) |
+| **Requisitos de ejecución** | Python **≥ 3.9**, solo biblioteca estándar |
 
-- Ejecuta un comando (por ejemplo `make`, `gcc`, `dotnet`, `cargo`) y **mezcla stdout y stderr** del proceso hijo, así no hace falta acordarse de `2>&1` en ese modo.
-- O lee la salida por **stdin** (tubería), por ejemplo `make iv 2>&1 | explain`.
-- Detecta el **lenguaje** de la base de patrones (`auto`): primer token del comando (o el argv parseado de `--shell` si no hay posicionales), **cualquier otro token** reconocible (`cargo`, `node`, `dotnet`, `python`, …), extensiones en argumentos y en el log, y forma del mensaje.
-- Extrae cuando puede **archivo:línea** y **función** (GCC, MSVC, Python, Node, TypeScript, etc.).
-- Apartado **Desconocidos (feedback)**: **solo errores o enlace** que parecen diagnósticos reales pero **no matchean** la base; texto **en crudo** para copiar y ampliar `explain/patterns/`.
-- Apartado **Advertencias fuera de la base (feedback)**: **warnings** sin patrón en la base (mismo espíritu que Desconocidos, pero separado: no mezclar errores con advertencias). El tope de líneas lo da **`--max-warnings`** (defecto 5).
-- **`--ub-hints`** (solo **C**, **C++** y **Assembly**): con **Python**, **C#**, **Rust**, **JavaScript**, etc., la opción **no activa UB-RISK**; en la salida aparece un aviso **«--ub-hints (no aplica)»** para que no parezca un fallo silencioso. La sección **«Posible comportamiento indefinido (indicios)»** depende de **contexto** visible en el **comando** o en la **salida mezclada**: **`-fsanitize`**, mensajes de **ASan/UBSan/TSan**, líneas de invocación con **`-Wall` / `-Wextra` / `-Wpedantic` / `-Wconversion` / `-Wundef`**, **`CFLAGS`/`CXXFLAGS`/`CPPFLAGS`/`LDFLAGS`** con esas opciones, o **cualquier etiqueta de diagnóstico `[-W…]`** en un mensaje del compilador (útil cuando `make` no imprime el `gcc …`). Si pedís `--ub-hints` y **no** hay contexto, verás **«--ub-hints (sección UB-RISK no activada)»** con el detalle. Si hay contexto pero ningún mensaje recibe etiqueta UB-RISK, un **pie** al final lo aclara (no afirma UB del estándar). Heurística opcional **crash:** en la etiqueta cuando aplica. **No** analiza código fuente.
-- **Índice al inicio del comando (`explain E1 …`):** misma numeración que **`--man`** (`E1`, `W2`, `UB1`, `E1-2`, varios tokens seguidos `E1 W2 make`…), pero la salida es la **habitual** (resumen compacto o `--full`), **sin** ficha ni cápsula. Ej.: `explain E1 make iv`, `explain W2 gcc -Wall x.c`. **Compatible con `-cnt` y `-m`** (el filtro por índice se aplica **después** de `-m`). **No** uses esos IDs posicionales junto con **`--man-all`** (error).
-- **`--man` / `-f` / `-F` (fichas):** **cápsulas didácticas**; entrada = comando, **`-i`/`--input-file`** o **stdin**. Un ítem: `E1`, `W2`, `UB1`. Varios: `E1-2-5` o `E1/2/3`; mezcla: `E1-2 W3 UB1` o **`explain --man E1 W1 make …`** (IDs sueltos antes del comando). Si un índice no está en el log, se avisa en stderr y se siguen mostrando las demás fichas (exit 2 solo si ninguna pudo mostrarse). Si existe **cápsula escrita a mano** para ese patrón (`explain/capsules/c_lang.py` en C/C++/Asm; en **Python**, **JavaScript** y **C#** vía `handwritten_extra.py` más `python_priority_capsules.py`, `js_priority_capsules.py` y `csharp_capsules.py`; **Rust** vía `rust_capsules.py` (importado desde `handwritten_extra.py`)), se usa esa (ejemplos ❌/✅). Si no, en esos lenguajes se genera una **cápsula sintética** desde `explain/patterns/…`. **Entrada obligatoria:** tubería, **`-i` archivo** o **comando**. **Tubo:** salida **cruda** (`make iv 2>&1 | explain --man E1`). **`-i` es solo `--input-file`**. **Incompatible** con `-cnt`. **UBn** con contexto en el log aunque no pases `--ub-hints`.
-- **`--man-all`:** solo fichas con **cápsula manual** (no sintética): `c_lang.py` + todo lo que aporta `handwritten_extra.py` (incluye los módulos `*_priority` y `csharp_capsules`); orden E…, W…, UB…. Para el resto usá `--man` / `-f` / `-F` por índice.
-- **`-i` / `--input-file`:** leer log desde archivo UTF-8; **no** con **`--shell`**. Opcional: tokens **después de las opciones** (`cargo`, `npm`, `gcc`…) solo como **pista de `--lang`**, sin ejecutarlos.
+## Funcionalidad (resumen)
 
-## Requisitos
-
-- Python **≥ 3.9**
-- Sin dependencias externas (solo biblioteca estándar).
+- **Entrada:** ejecución de un comando posicional (stdout y stderr **mezclados**), tubería por **stdin**, archivo con **`-i` / `--input-file`**, o **`--shell`** con una cadena ejecutada en el shell del sistema.
+- **Idioma de la base (`--lang` / `auto`):** inferencia a partir del ejecutable, otros tokens del argv, extensiones en rutas del log y forma del mensaje.
+- **Salida principal:** resumen de errores y advertencias reconocidos, con ubicación cuando se pudo parsear; secciones de **retroalimentación** para diagnósticos que parecen válidos pero **no** tienen patrón (**Desconocidos** / **Advertencias fuera de la base**, con tope `--max-warnings`).
+- **Índices posicionales (`explain E1 …`, `W2`, `UB1`, combinaciones):** misma numeración que `--man`, sobre la salida estándar del resumen (no abren ficha); compatibles con **`-m`** y **`-cnt`** según reglas del CLI.
+- **`--man` / `-f` / `-F`:** fichas por índice; requieren fuente de log (comando, `-i` o stdin no interactivo). Detalle de flags y combinaciones prohibidas: tabla más abajo y **[docs/CLI.md](docs/CLI.md)**.
 
 ## Tabla del CLI (flags, entradas, combinaciones)
 
@@ -43,7 +44,7 @@
 | `--shell` | — | Ejecuta una cadena con el shell del sistema; analiza stdout+stderr. **No** con `-i`. |
 | `--count` | `-cnt` | Solo conteos; sin bloques de texto. |
 | `--man` | `-f`, `-F` | Una o varias fichas (`E1`, `E1-2 W3`, …). Requiere **fuente de texto** (ver abajo). |
-| `--man-all` | — | Todas las fichas con cápsula **manual** (`c_lang.py`, `handwritten_extra.py` y módulos enlazados; no sintéticas). |
+| `--man-all` | — | Todas las fichas del log usando cápsulas **persistidas** en `explain/capsules/` (excluye sintéticas generadas al vuelo). |
 | `--input-file` | `-i` | Lee el log desde archivo UTF-8. **No** con `--shell`. Tokens posicionales opcionales: pista de idioma (`cargo`, `npm`, …), no se ejecutan. |
 | `--install-shell-completions` | — | Copia completions bash/zsh/fish al home (Unix); **termina**; sin comando. |
 
@@ -89,9 +90,9 @@ source .venv/bin/activate
 
 **direnv:** en el repo hay **`.envrc`**: con [direnv](https://direnv.net/) ejecutá `direnv allow`. Se añade `.venv/bin` al `PATH` si existe y, en **bash**, se **sourcea** `completions/explain.bash` al entrar al directorio (completions desde el clone, sin copiar al home).
 
-## Linux, Windows, WSL y macOS (aula y uso personal)
+## Linux, Windows, WSL y macOS
 
-El mismo código corre en **Linux**, **Windows** y **macOS**: sirve para corregir prácticas en el lab, en casa o en CI, siempre que haya Python.
+El mismo código corre en **Linux**, **Windows** y **macOS** con Python instalado; es apto para desarrollo local, entornos académicos y CI.
 
 - **Instalación recomendada:** entorno virtual + `pip install -e .` (ver abajo). En Windows el ejecutable queda en `.venv\Scripts\explain.exe`.
 - **WSL:** tratá WSL como **Linux**: mismos comandos, tuberías y opción de `./install.sh` si querés `explain` en el PATH del distro y página **man**. El binario que compilás con `gcc`/`make` dentro de WSL es el de Linux; pasá la salida del build a `explain` igual que en una máquina nativa.
@@ -101,19 +102,20 @@ El mismo código corre en **Linux**, **Windows** y **macOS**: sirve para corregi
 
 Los mensajes pueden traer rutas con `/` o `\`; la detección de lenguaje por rutas en el log normaliza `\` a `/` al inferir extensiones.
 
-## Visión del proyecto, sin IA y con IA en el editor
+## Posición respecto de otros flujos de trabajo
 
-**Sin modelos:** `explain` es una capa **determinista** sobre el texto del compilador: auditable, repetible y barata de ejecutar en cualquier máquina. Para quien programa **sin IA** es un glosario y una checklist en español al lado del terminal.
-
-**Con IA (Cursor, Copilot, etc.):** encaja bien como **regla o hábito de flujo**: por ejemplo *“después de un build fallido, ejecutar `explain …` (o la tubería) y solo entonces pedir ayuda al asistente, pegando ya el resumen en español”*. Así la IA parte de **mensajes ya interpretados** y de secciones **Desconocidos / Advertencias fuera de la base** cuando haya que ampliar patrones, en lugar de adivinar sobre el crudo en inglés.
-
-En conjunto, el sistema es **sólido para enseñanza y día a día**: no sustituye al compilador ni a sanitizers; **ordena** la salida, **prioriza** qué leer primero y **documenta** el criterio de `--ub-hints` para no confundir “no hubo indicios” con “no funcionó la opción”. La base de regex crece con el uso; cuanto más heterogéneo el entorno (Linux, Windows, WSL), más vale **tests en los dos sistemas** antes de publicar (ya indicado abajo).
+El diseño apunta a **trazabilidad**: mismo log de entrada → misma salida, sin servicios externos. En entornos con asistentes de código, el resumen en español y las secciones de **Desconocidos** / **Advertencias fuera de la base** sirven como **insumo estructurado** para ampliar patrones o depurar, sin sustituir al compilador ni a los sanitizers. La herramienta **prioriza** y **etiqueta** mensajes; la base de regex se mantiene **manualmente** y crece con el uso.
 
 ## Novedades (resumen)
 
+**0.6.8**
+
+- **Más patrones:** C (fatal OOM/escritura, enum duplicado, `void`/`sizeof`), advertencias GCC (`-Wshadow`, `-Wstrict-aliasing`, `-Wjump-misses-init`), C++ (destructor/ctor no accesible, `bad_function_call`), Python (`pickle`, SSL/TLS, `queue`, `zlib`), JS/TS (`fetch` fallido, TS2589, `dlopen`/addon, ESM vs script), Rust (E0584, E0728, E0794), C# (CS0171, CS8410), .NET (**MediatR**, **MassTransit**), ensamblador **AVR** y **Xtensa**.
+- **Cápsulas:** módulo `explain/capsules/support_extension_capsules.py` enlazado desde `c_capsules_extended`, `cpp_capsules`, `asm_lang` y `handwritten_extra`.
+
 **0.6.7**
 
-- **Cápsulas manuales al 100%** de la base actual: cada regex en `explain/patterns/` tiene ficha con ejemplos ❌/✅ en **C**, **C++**, **Assembly**, **Python**, **JavaScript**, **Rust** y **C#** (módulos nuevos o ampliados: `rust_capsules.py`, `cpp_capsules.py`, `c_capsules_gap.py`, más prioridad JS/TS y C#).
+- **Cobertura de cápsulas por clave:** cada regex de la base actual tiene entrada en `explain/capsules/` para **C**, **C++**, **Assembly**, **Python**, **JavaScript**, **Rust** y **C#** (núcleo curado más módulos de cobertura amplia: p. ej. `man_coverage_bulk.py`, gaps C/CPP/Asm, prioridades JS/C#/Python).
 - **TypeScript:** más códigos `TSxxxx` en `js_ts.py` con fichas en `js_priority_capsules.py`.
 - Documentación (`README`, `docs/CLI.md`, `man/explain.1`) alineada con la estructura de `explain/capsules/`.
 
@@ -268,17 +270,15 @@ Los patrones viven en **`explain/patterns/`**: núcleo por lenguaje (`python_lan
 
 Para ampliar la base: agregá o editá entradas en el módulo que corresponda; cada entrada es un **regex** con `titulo`, `explicacion` y `soluciones` (lista).
 
-## Limitaciones (a propósito)
+## Limitaciones
 
-- No “entiende” código: solo **texto de salida** frente a **regex**.
-- Mensajes raros o de toolchains nuevos caen en **desconocidos**: revisá ese apartado y sumá regex al módulo del lenguaje que ya usás.
-- El mantenimiento es **manual**: cuanto más usés la herramienta, más vale ir nutriendo `explain/patterns/`.
+- No analiza código fuente: solo **texto de salida** frente a **regex**.
+- Toolchains nuevos o mensajes poco frecuentes pueden quedar fuera de la base hasta incorporar patrones en `explain/patterns/`.
+- El mantenimiento de la base y de las cápsulas es **manual** y depende del uso real del proyecto.
 
-## Ideas para seguir (sugerencias)
+## Posibles extensiones
 
-- **Depuración de base:** flag para listar títulos de patrones por `--lang`.
-- **Windows:** completions o notas para **PowerShell** (Git Bash/WSL ya cubren mucho).
-- **Más adelante:** salida `--json` / `-cnt` en JSON, código de salida configurable en CI, o **nuevos lenguajes** (Go, Java, …) con el mismo esquema `patterns/`.
+Ejemplos de evolución alineada con el modelo actual: salida estructurada (p. ej. JSON), más lenguajes o familias de mensajes con el mismo esquema `patterns/` + `capsules/`, o utilidades de inspección de la base por `--lang`. **Rendimiento:** con el volumen típico de logs y el índice actual, el cuello de botella suele ser E/S y no el motor de emparejamiento; optimizar el lookup tendría sentido ante **perfilado** o un crecimiento muy superior del número de patrones.
 
 ## Estructura del repo (resumen)
 
@@ -289,7 +289,7 @@ explain/           # paquete Python
   pattern_index.py # regex precompilados + índice invertido
   man_capsule.py   # parseo --man y texto de ficha
   shell_completions.py  # --install-shell-completions (bash/zsh/fish → home)
-  capsules/        # --man: c_lang + c_capsules_extended + c_capsules_gap + asm + cpp_capsules; rust_capsules; handwritten_extra + python_priority + js_priority + csharp_capsules
+  capsules/        # --man: c_lang, c_capsules_*, asm_lang, cpp_capsules, rust_capsules, handwritten_extra, *_priority, man_coverage_bulk, support_extension_capsules, etc.
   patterns/        # errores, *_warnings.py, *_frameworks.py, assembly*.py (x86/ARM)
 Makefile           # make dev → venv + pip install -e . + install completions
 .envrc             # opcional: direnv (PATH .venv + source completions en bash)

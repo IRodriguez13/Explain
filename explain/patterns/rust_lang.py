@@ -191,7 +191,7 @@ ERRORES_RUST = {
         "explicacion": "Accedés a un campo no público de otro módulo.",
         "soluciones": ["pub field", "getter público en el tipo"],
     },
-    r"error\[E0515\]: cannot return reference to": {
+    r"error\[E0515\]: cannot return (reference to|value referencing)": {
         "titulo": "E0515 — referencia a valor local",
         "explicacion": "Retornás una referencia a datos que no sobreviven a la función.",
         "soluciones": ["Tipo de retorno owned (String, Vec)", "Parámetro con lifetime de entrada"],
@@ -220,5 +220,180 @@ ERRORES_RUST = {
         "titulo": "E0592 — definición duplicada",
         "explicacion": "Dos items con el mismo nombre en el mismo ámbito (p. ej. fn repetida).",
         "soluciones": ["Eliminá la copia", "Renombrá o usá módulos distintos"],
+    },
+    r"error\[E0508\]: cannot move out of": {
+        "titulo": "E0508 — move y Drop",
+        "explicacion": "Movés parte de un valor cuyo tipo implementa Drop (p. ej. campo de array/tuple); no se puede dejar parcialmente sin ejecutar drop.",
+        "soluciones": ["replace / take con Option", "clone()", "Reestructurá para owned completo"],
+    },
+    r"error\[E0381\]:.*(possibly uninitialized|used binding)": {
+        "titulo": "E0381 — uso sin inicializar",
+        "explicacion": "Leés una variable que el compilador no garantiza inicializada en ese camino.",
+        "soluciones": ["Inicializá en todas las ramas", "if let / match que asigna antes de usar"],
+    },
+    r"error\[E0594\]: cannot assign to": {
+        "titulo": "E0594 — asignación detrás de &",
+        "explicacion": "Intentás mutar un campo a través de referencia compartida (&) sin interior mutability.",
+        "soluciones": ["&mut en la API", "Cell/RefCell/Mutex con criterio", "Copia owned y reasigná"],
+    },
+    r"error\[E0428\]:.*defined multiple times": {
+        "titulo": "E0428 — definición duplicada (módulo)",
+        "explicacion": "El mismo item (fn, static, mod) está definido dos veces en el mismo módulo.",
+        "soluciones": ["Eliminá una definición", "Unificá en un solo archivo o mod"],
+    },
+    r"error\[E0752\]:|`await` is only allowed in `async`": {
+        "titulo": "E0752 — await fuera de async",
+        "explicacion": "await solo dentro de async fn o bloque async.",
+        "soluciones": ["async fn / async { }", "block_on / runtime adecuado en sync"],
+    },
+    r"error\[E0495\]: cannot infer an appropriate lifetime": {
+        "titulo": "E0495 — lifetime ambiguo en params",
+        "explicacion": "Varias referencias de entrada y el retorno no encajan en una relación de vida inferible.",
+        "soluciones": ["Anotá 'a explícita en args y retorno", "Una sola referencia de entrada si aplica"],
+    },
+    r"error\[E0312\]: lifetime of reference outlives": {
+        "titulo": "E0312 — lifetime de referencia",
+        "explicacion": "La referencia viviría más que lo permitido por el borrow checker.",
+        "soluciones": ["Acortá el scope", "Datos owned en el struct"],
+    },
+    r"error\[E0618\]: expected function, found": {
+        "titulo": "E0618 — no es función",
+        "explicacion": "Llamás () sobre un valor que no es fn, Fn o puntero a función.",
+        "soluciones": ["Revisá si es campo vs método", "Deref con * o paréntesis"],
+    },
+    r"error\[E0623\]: lifetime mismatch": {
+        "titulo": "E0623 — desajuste de lifetime",
+        "explicacion": "Anotaciones de 'a en impl/trait no coinciden con el uso.",
+        "soluciones": ["Alineá lifetimes del trait y del tipo", "Elision en métodos simples"],
+    },
+    r"cannot be sent between threads safely|cannot be shared between threads safely": {
+        "titulo": "Send / Sync",
+        "explicacion": "rustc: el tipo no implementa Send o Sync donde se exige (spawn, static, etc.).",
+        "soluciones": ["Arc<Mutex<T>>", "Owned data en el closure", "rayon/channels"],
+    },
+    r"error: couldn't read .*\.rs|couldn't read.*Cargo\.lock": {
+        "titulo": "rustc — archivo de fuente",
+        "explicacion": "El compilador no pudo leer un archivo del crate (ruta, permisos, include_str!).",
+        "soluciones": ["Ruta correcta en include!", "Archivo en el repo y no ignorado por error"],
+    },
+    r"error\[E0593\]: closure is expected to take": {
+        "titulo": "E0593 — closure args",
+        "explicacion": "La closure no tiene la aridad que espera Fn/FnMut/FnOnce en ese contexto.",
+        "soluciones": ["Ajustá |a, b| vs |_|", "move closure"],
+    },
+    r"error\[E0614\]: type `.*` cannot be dereferenced": {
+        "titulo": "E0614 — no desreferenciable",
+        "explicacion": "Usás * sobre un tipo que no implementa Deref o no es puntero.",
+        "soluciones": ["& vs *", "Implementá Deref o usá .as_ref()"],
+    },
+    r"error\[E0624\]: method.*is private": {
+        "titulo": "E0624 — método privado",
+        "explicacion": "Llamás método privado de otro módulo o tipo.",
+        "soluciones": ["pub fn", "API pública en impl"],
+    },
+    r"error\[E0635\]: unknown feature": {
+        "titulo": "E0635 — feature desconocida",
+        "explicacion": "#![feature(x)] no existe en esta toolchain.",
+        "soluciones": ["Quita feature o usá nightly correcta", "Renombre si fue renombrada"],
+    },
+    r"error\[E0689\]: can't call method.*on ambiguous numeric type": {
+        "titulo": "E0689 — numérico ambiguo",
+        "explicacion": "Literal o expresión sin tipo; método numérico ambiguo.",
+        "soluciones": ["Sufijo 1i32, 1.0f64", "Anotación de tipo explícita"],
+    },
+    r"error\[E0714\]:.*pro macro panicked": {
+        "titulo": "E0714 — proc macro panic",
+        "explicacion": "Un procedural macro hizo panic! durante la expansión.",
+        "soluciones": ["Versión del macro", "Input al macro válido"],
+    },
+    r"error\[E0724\]: `await` is only allowed inside `async` functions and blocks": {
+        "titulo": "E0724 — await",
+        "explicacion": "await en contexto no async (similar E0752 según versión).",
+        "soluciones": ["async fn o bloque async", "block_on"],
+    },
+    r"error\[E0774\]: `derive` may only be applied to": {
+        "titulo": "E0774 — derive inválido",
+        "explicacion": "#[derive] en item que no lo admite.",
+        "soluciones": ["Solo struct/enum/union", "Quita derive del item incorrecto"],
+    },
+    r"error\[E0782\]: expected a type, found": {
+        "titulo": "E0782 — tipo esperado",
+        "explicacion": "Sintaxis de tipo incorrecta (genéricos, turbofish mal formado).",
+        "soluciones": ["::<T> en posición correcta", "Revisá use<> en impl"],
+    },
+    r"error\[E0793\]:.*reference to mutable static": {
+        "titulo": "E0793 — static mut",
+        "explicacion": "Acceso a static mut requiere unsafe y es fácil data race.",
+        "soluciones": ["Mutex<LazyLock>", "Evitá static mut"],
+    },
+    r"error: the crate `.*` is compiled with the panic strategy": {
+        "titulo": "Panic strategy incompatible",
+        "explicacion": "Mezcla de crates panic=abort vs unwind en el enlace.",
+        "soluciones": ["profile.* panic en Cargo.toml unificado", "Misma strategy en deps"],
+    },
+    r"error: failed to run custom build command for": {
+        "titulo": "build.rs falló",
+        "explicacion": "build script del crate devolvió error o no encontró lib del sistema.",
+        "soluciones": ["pkg-config", "VPKG_CONFIG_PATH", "README del crate nativo"],
+    },
+    r"error: linking with `cc` failed:.*undefined reference to `_Unwind_Resume`": {
+        "titulo": "Enlace — unwinding / libgcc",
+        "explicacion": "Mezcla de objetos C++/Rust y runtime de excepciones faltante.",
+        "soluciones": ["-C link-arg", "Mismo stdlib", "panic=abort coherente"],
+    },
+    r"error: environment variable `.*` not defined": {
+        "titulo": "Variable de entorno en compile-time",
+        "explicacion": "env!(...) o option_env en build sin la variable.",
+        "soluciones": ["export VAR", ".env en tooling de build"],
+    },
+    r"error: couldn't load codegen backend|cannot find.*librustc_codegen": {
+        "titulo": "Backend de codegen",
+        "explicacion": "Instalación de Rust corrupta o mezcla de toolchain.",
+        "soluciones": ["rustup component add", "rustup reinstall"],
+    },
+    r"error: the name `.*` is defined multiple times `use`": {
+        "titulo": "use duplicado o conflicto",
+        "explicacion": "Dos imports con el mismo nombre en scope.",
+        "soluciones": ["as alias", "Prelude y use explícito"],
+    },
+    r"error\[E0253\]: `.*` is not a module": {
+        "titulo": "E0253 — no es módulo",
+        "explicacion": "use path::foo asume módulo pero foo es otro item.",
+        "soluciones": ["Ruta use correcta", "pub mod"],
+    },
+    r"error\[E0401\]: can't use generic parameters from outer function": {
+        "titulo": "E0401 — genérico externo",
+        "explicacion": "Fn interna o impl anidado intenta usar tipo genérico del padre mal.",
+        "soluciones": ["Reestructurá en trait", "Tipo explícito en closure"],
+    },
+    r"error\[E0525\]: expected a closure that implements the `Fn` trait": {
+        "titulo": "E0525 — Fn vs FnMut vs FnOnce",
+        "explicacion": "La closure captura de forma que no satisface el bound requerido.",
+        "soluciones": ["move", "clone antes de capturar", "Cambiar bound a FnMut"],
+    },
+    r"error\[E0559\]: variant `.*` does not have a field named": {
+        "titulo": "E0559 — campo de enum",
+        "explicacion": "Struct variant del enum no tiene ese campo.",
+        "soluciones": ["Nombres de campos correctos", "Tuple vs struct variant"],
+    },
+    r"error\[E0569\]: bounds are not satisfied": {
+        "titulo": "E0569 — bounds (objeto)",
+        "explicacion": "Trait object o impl no cumple bounds adicionales.",
+        "soluciones": ["dyn Trait + Send", "where clause"],
+    },
+    r"error\[E0584\]: file for module `.*` found at both": {
+        "titulo": "E0584 — módulo duplicado",
+        "explicacion": "rustc encontró dos archivos candidatos para el mismo módulo (foo.rs y foo/mod.rs).",
+        "soluciones": ["Dejá solo una convención", "Renombrá o mové el archivo sobrante"],
+    },
+    r"error\[E0728\]: `await` is only allowed inside `async`": {
+        "titulo": "E0728 — await fuera de async",
+        "explicacion": "Usás .await en función no async o bloque incorrecto.",
+        "soluciones": ["async fn", "block_on en main sync", "spawn_blocking"],
+    },
+    r"error\[E0794\]:": {
+        "titulo": "E0794 — restricción const / feature",
+        "explicacion": "rustc rechaza una operación en contexto const o una feature asociada (mensaje depende de la versión).",
+        "soluciones": ["rustc --explain E0794", "Sacá const donde no aplica", "Canal nightly estable"],
     },
 }

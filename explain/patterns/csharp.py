@@ -296,4 +296,294 @@ ERRORES_CSHARP = {
         "explicacion": "El TargetFramework requiere un SDK más nuevo del instalado.",
         "soluciones": ["Instalá SDK más reciente", "global.json con versión", "Bajá netX.Y del csproj"],
     },
+    r"CS0119:.*is not valid in the given context": {
+        "titulo": "CS0119 — tipo usado como variable",
+        "explicacion": "El nombre es un tipo pero lo usás como valor (confusión con static/namespace).",
+        "soluciones": ["new T()", "Nombre calificado correcto", "using alias"],
+    },
+    r"CS0121:.*call is ambiguous": {
+        "titulo": "CS0121 — llamada ambigua",
+        "explicacion": "Varias sobrecargas encajan igual de bien.",
+        "soluciones": ["Cast de argumentos", "Eliminá sobrecargas redundantes"],
+    },
+    r"CS0136:.*cannot declare.*in this scope": {
+        "titulo": "CS0136 — sombra en scope",
+        "explicacion": "Declarás local con el mismo nombre que otro en un scope envolvente.",
+        "soluciones": ["Renombrá", "Bloques { } más pequeños"],
+    },
+    r"CS0152:.*switch statement contains multiple cases": {
+        "titulo": "CS0152 — case duplicado",
+        "explicacion": "Dos case con el mismo valor constante.",
+        "soluciones": ["Unificá casos", "Corregí el literal duplicado"],
+    },
+    r"CS0176:.*static member.*cannot be accessed": {
+        "titulo": "CS0176 — miembro static",
+        "explicacion": "Accedés a static con instancia en lugar del tipo.",
+        "soluciones": ["Tipo.Miembro en lugar de instancia.Miembro"],
+    },
+    r"CS0266:.*Cannot implicitly convert type": {
+        "titulo": "CS0266 — conversión implícita con pérdida",
+        "explicacion": "Conversión numérica posible pero requiere cast explícito (p. ej. double a int).",
+        "soluciones": ["(int)x con criterio", "Convert.ToInt32"],
+    },
+    r"CS1063:.*Extension methods.*defined on": {
+        "titulo": "CS1063 — extensión en tipo equivocado",
+        "explicacion": "El método de extensión no aplica al tipo del receptor.",
+        "soluciones": ["using del namespace de extensión", "Revisá tipo del this"],
+    },
+    r"CS1508:.*Resource identifier.*has already been used": {
+        "titulo": "CS1508 — recurso embebido duplicado",
+        "explicacion": "Dos archivos con el mismo nombre lógico en recursos del ensamblado.",
+        "soluciones": ["LogicalName distinto en .csproj", "Renombrá archivos"],
+    },
+    r"CS1739:.*best overload.*does not have a parameter named": {
+        "titulo": "CS1739 — argumento nombrado",
+        "explicacion": "Pasás nombre: valor que no coincide con ningún parámetro de la sobrecarga elegida.",
+        "soluciones": ["Revisá nombres de parámetros", "Orden posicional"],
+    },
+    r"CS1977:.*Cannot use a lambda expression as an argument": {
+        "titulo": "CS1977 — lambda y dynamic",
+        "explicacion": "dynamic no puede enlazar overload con lambda sin tipo de delegate explícito.",
+        "soluciones": ["Cast a Action/Func", "Evitá dynamic en esa llamada"],
+    },
+    r"CS8070:.*feature.*top-level statements": {
+        "titulo": "CS8070 — top-level statements",
+        "explicacion": "Mezcla incorrecta de top-level con otras unidades o versión de lenguaje.",
+        "soluciones": ["Un solo archivo top-level", "LangVersion preview si aplica"],
+    },
+    r"CS9113:.*parameter.*is unread": {
+        "titulo": "CS9113 — parámetro primary constructor no usado",
+        "explicacion": "En record/class con primary constructor, un parámetro no se usa en el cuerpo.",
+        "soluciones": ["Usá el campo", "Descartá con _", "Quita el parámetro"],
+    },
+    r"CS0128:.*already defined in this scope": {
+        "titulo": "CS0128 — variable local duplicada",
+        "explicacion": "Dos locales con el mismo nombre en el mismo bloque.",
+        "soluciones": ["Renombrá", "Bloques anidados"],
+    },
+    r"CS0145:.*const field": {
+        "titulo": "CS0145 — campo const",
+        "explicacion": "const en clase requiere inicializador estático en sitio.",
+        "soluciones": ["= valor constante", "static readonly"],
+    },
+    r"CS0155:.*catch|throw.*System\.Exception": {
+        "titulo": "CS0155 — catch o throw inválido",
+        "explicacion": "catch de tipo que no hereda de Exception o throw mal formado.",
+        "soluciones": ["catch (Exception ex)", "throw; o throw new"],
+    },
+    r"CS0160:.*previous catch clause already catches": {
+        "titulo": "CS0160 — catch inalcanzable",
+        "explicacion": "Un catch base está antes que uno más específico.",
+        "soluciones": ["Orden: específico primero"],
+    },
+    r"CS0188:.*before all fields": {
+        "titulo": "CS0188 — this antes de campos",
+        "explicacion": "En struct, usás this antes de asignar todos los campos.",
+        "soluciones": ["Asigná campos en orden", "ctor con : this(...)"],
+    },
+    r"CS0191:.*readonly field": {
+        "titulo": "CS0191 — readonly fuera de ctor",
+        "explicacion": "Asignás readonly fuera del constructor o del inicializador.",
+        "soluciones": ["Solo en ctor/static ctor", "Quita readonly"],
+    },
+    r"CS0214:.*pointers and fixed size buffers": {
+        "titulo": "CS0214 — punteros unsafe",
+        "explicacion": "Operación de puntero fuera de unsafe.",
+        "soluciones": ["unsafe { }", "Span<T> en lugar de puntero"],
+    },
+    r"CS0227:.*unsafe code": {
+        "titulo": "CS0227 — unsafe deshabilitado",
+        "explicacion": "Proyecto sin AllowUnsafeBlocks.",
+        "soluciones": ["<AllowUnsafeBlocks>true</AllowUnsafeBlocks>"],
+    },
+    r"CS0248:.*void": {
+        "titulo": "CS0248 — void en expresión",
+        "explicacion": "Usás void como tipo de variable o operando.",
+        "soluciones": ["No uses void salvo retorno de método"],
+    },
+    r"CS0513:.*abstract.*in sealed class": {
+        "titulo": "CS0513 — abstract en sealed",
+        "explicacion": "Clase sealed no puede tener abstract.",
+        "soluciones": ["Quita sealed o abstract"],
+    },
+    r"CS0515:.*fixed|override.*in fixed": {
+        "titulo": "CS0515 — override en método fixed",
+        "explicacion": "override ilegal en contexto fixed (raro).",
+        "soluciones": ["Revisá firma y fixed statement"],
+    },
+    r"CS0557:.*duplicate user conversion": {
+        "titulo": "CS0557 — conversión duplicada",
+        "explicacion": "Dos conversiones implícitas/explícitas ambiguas.",
+        "soluciones": ["Una conversión por dirección", "explicit"],
+    },
+    r"CS0563:.*binary operator.*parameter": {
+        "titulo": "CS0563 — operador binario",
+        "explicacion": "Operador binario: un parámetro debe ser el tipo contenedor.",
+        "soluciones": ["Firma (T, T) o (T, int) con T contenedor"],
+    },
+    r"CS0571:.*operator.*cannot implicitly": {
+        "titulo": "CS0571 — operador acceso",
+        "explicacion": "No podés usar . en operador implícito; sintaxis especial.",
+        "soluciones": ["implicit operator T(...)"],
+    },
+    r"CS0591:.*Invalid value for argument": {
+        "titulo": "CS0591 — argumento de atributo",
+        "explicacion": "Valor inválido en atributo (enum, tipo).",
+        "soluciones": ["Valores permitidos del atributo"],
+    },
+    r"CS0648:.*extern alias": {
+        "titulo": "CS0648 — extern alias",
+        "explicacion": "Referencia con alias extern mal referenciada.",
+        "soluciones": ["extern alias en csproj", ":: global"],
+    },
+    r"CS0650:.*bad array declarator": {
+        "titulo": "CS0650 — declarador de array",
+        "explicacion": "Tamaño de array en posición incorrecta (C# vs C).",
+        "soluciones": ["int[] no int a[]"],
+    },
+    r"CS0662:.*out.*Attribute": {
+        "titulo": "CS0662 — out y atributo",
+        "explicacion": "Incompatibilidad entre out y ciertos atributos en P/Invoke.",
+        "soluciones": ["Revisá DllImport y marshalling"],
+    },
+    r"CS0674:.*struct.*extends System\.MulticastDelegate": {
+        "titulo": "CS0674 — struct delegate",
+        "explicacion": "struct no puede heredar MulticastDelegate.",
+        "soluciones": ["delegate es referencia type"],
+    },
+    r"CS0683:.*differing param lists": {
+        "titulo": "CS0683 — explícito interface",
+        "explicacion": "Implementación explícita no coincide con interfaz.",
+        "soluciones": ["Firma idéntica a la interfaz"],
+    },
+    r"CS0708:.*field.*in static class": {
+        "titulo": "CS0708 — campo instancia en static",
+        "explicacion": "static class no puede tener campos de instancia.",
+        "soluciones": ["static readonly", "Quita static de la clase"],
+    },
+    r"CS0737:.*does not implement": {
+        "titulo": "CS0737 — interfaz no implementada",
+        "explicacion": "Miembros no públicos no cuentan para interfaz pública.",
+        "soluciones": ["public en miembros de interfaz"],
+    },
+    r"CS0750:.*partial method": {
+        "titulo": "CS0750 — partial method",
+        "explicacion": "partial method con modificador inválido o sin definición.",
+        "soluciones": ["Reglas partial void", "Cuerpo en un partial"],
+    },
+    r"CS0759:.*partial.*modifiers": {
+        "titulo": "CS0759 — partial inconsistente",
+        "explicacion": "Dos partes de partial con modificadores distintos.",
+        "soluciones": ["Unificá public/private static"],
+    },
+    r"CS0826:.*implicitly typed array": {
+        "titulo": "CS0826 — array implícito",
+        "explicacion": "new[] sin tipo común inferible entre elementos.",
+        "soluciones": ["Tipo explícito new int[]", "Cast"],
+    },
+    r"CS0834:.*lambda.*statement body": {
+        "titulo": "CS0834 — lambda en árbol",
+        "explicacion": "Expression lambda vs statement body en Expression<T>.",
+        "soluciones": ["Expresión única", "Statement en Func si aplica"],
+    },
+    r"CS0854:.*expression tree.*optional argument": {
+        "titulo": "CS0854 — argumento opcional en expression tree",
+        "explicacion": "Expression tree no puede tener args opcionales en la llamada.",
+        "soluciones": ["Pasá todos los args explícitos"],
+    },
+    r"CS1620:.*ref.*out.*foreach": {
+        "titulo": "CS1620 — ref/out en foreach",
+        "explicacion": "foreach variable es read-only; no ref/out.",
+        "soluciones": ["for con índice", "ToList y mutar"],
+    },
+    r"CS1631:.*yield return.*catch": {
+        "titulo": "CS1631 — yield en catch",
+        "explicacion": "yield return no permitido dentro de catch/finally.",
+        "soluciones": ["Reestructurá try/catch fuera del iterador"],
+    },
+    r"CS1643:.*foreach.*not directly": {
+        "titulo": "CS1643 — foreach en query",
+        "explicacion": "Notación de query con foreach anidado inválido.",
+        "soluciones": ["from/select explícito", "Método syntax"],
+    },
+    r"CS1674:.*using.*must implement IDisposable": {
+        "titulo": "CS1674 — using sin IDisposable",
+        "explicacion": "using requiere IDisposable.",
+        "soluciones": ["Implementá Dispose", "await using IAsyncDisposable"],
+    },
+    r"CS1685:.*predefined type.*multiple": {
+        "titulo": "CS1685 — tipo predefinido duplicado",
+        "explicacion": "Conflicto de System.Runtime / mscorlib múltiples.",
+        "soluciones": ["Binding redirects", "Unificar paquetes System.Runtime"],
+    },
+    r"CS1737:.*optional parameters.*after": {
+        "titulo": "CS1737 — opcionales al final",
+        "explicacion": "Parámetros opcionales deben ir después de los requeridos.",
+        "soluciones": ["Reordená parámetros"],
+    },
+    r"CS1741:.*ref.*out.*default": {
+        "titulo": "CS1741 — default en ref/out",
+        "explicacion": "ref/out no pueden tener valor default en la misma firma mal formada.",
+        "soluciones": ["Firma válida C#"],
+    },
+    r"CS1763:.*variadic": {
+        "titulo": "CS1763 — params",
+        "explicacion": "params debe ser último y un solo array.",
+        "soluciones": ["params object[] al final"],
+    },
+    r"CS1988:.*async methods.*ref.*unsafe": {
+        "titulo": "CS1988 — async y ref/unsafe",
+        "explicacion": "async method no puede tener ref unsafe parameters según reglas.",
+        "soluciones": ["Span", "Quita async de esa capa"],
+    },
+    r"CS4008:.*await.*void": {
+        "titulo": "CS4008 — await void",
+        "explicacion": "await en expresión void.",
+        "soluciones": ["async Task", "No await void returning"],
+    },
+    r"CS4015:.*async.*Main": {
+        "titulo": "CS4015 — async Main",
+        "explicacion": "async Main requiere Task/Task<int> retorno.",
+        "soluciones": ["static async Task Main()", "top-level async"],
+    },
+    r"CS4016:.*async.*void": {
+        "titulo": "CS4016 — async void",
+        "explicacion": "async void solo en event handlers según estilo.",
+        "soluciones": ["async Task", "Excepciones se pierden en async void"],
+    },
+    r"CS8425:.*async.*iterator": {
+        "titulo": "CS8425 — async iterator",
+        "explicacion": "IAsyncEnumerable mal formado o yield en async stream.",
+        "soluciones": ["async IAsyncEnumerable", "await foreach"],
+    },
+    r"CS8792:.*partial.*method": {
+        "titulo": "CS8792 — partial method returning",
+        "explicacion": "partial method con return type debe tener definición.",
+        "soluciones": ["Ambas partes partial"],
+    },
+    r"CS8981:.*type name.*only contains lower-cased ascii": {
+        "titulo": "CS8981 — nombre tipo en minúsculas",
+        "explicacion": "Advertencia/nivel error: tipo `list` vs convención.",
+        "soluciones": ["PascalCase", "Suprimí warning si es intencional"],
+    },
+    r"CS9050:.*file-scoped": {
+        "titulo": "CS9050 — file-scoped namespace",
+        "explicacion": "Conflicto de namespace file-scoped con declaración interna.",
+        "soluciones": ["Un estilo por archivo"],
+    },
+    r"CS9230:.*ref struct": {
+        "titulo": "CS9230 — ref struct",
+        "explicacion": "Restricción de ref struct (heap, async, etc.).",
+        "soluciones": ["stackalloc", "Span rules"],
+    },
+    r"CS0171:.*fully assign": {
+        "titulo": "CS0171 — struct sin asignar",
+        "explicacion": "Constructor no asignó todos los campos del struct antes de salir.",
+        "soluciones": ["this : this(...)", "Asigná cada campo", "readonly en propiedades auto"],
+    },
+    r"CS8410:": {
+        "titulo": "CS8410 — readonly / ref struct",
+        "explicacion": "Campo readonly, ref struct o regla de inicialización incumplida en el contexto.",
+        "soluciones": ["Constructor primario", "init-only donde aplique", "Leé el texto completo del diagnóstico"],
+    },
 }

@@ -286,4 +286,274 @@ ERRORES_PYTHON = {
         "explicacion": "Línea mal formada para el dialecto (comillas, delimitador).",
         "soluciones": ["Dialect y quoting", "errors='replace' en open si encoding"],
     },
+    r"struct\.error:": {
+        "titulo": "struct — empaquetado binario",
+        "explicacion": "struct.pack/unpack: tamaño, alineación o tipos no coinciden con el formato.",
+        "soluciones": ["Revisá la cadena de formato y len de bytes", "Endianness explícito (< > =)"],
+    },
+    r"ImportError:.*DLL load failed|ImportError:.*dynamic module": {
+        "titulo": "DLL / extensión nativa",
+        "explicacion": "Extensión C/Rust no carga: falta .so/.dll, ABI incompatible o dependencia del sistema.",
+        "soluciones": ["Misma versión de Python que al compilar", "ldd / Dependencies", "Reinstalá wheel del paquete"],
+    },
+    r"dataclasses\.FrozenInstanceError": {
+        "titulo": "dataclass frozen",
+        "explicacion": "Instancia con frozen=True; no se pueden asignar campos.",
+        "soluciones": ["dataclasses.replace()", "Nueva instancia en lugar de mutar"],
+    },
+    r"importlib\.metadata\.PackageNotFoundError": {
+        "titulo": "Paquete no instalado (metadata)",
+        "explicacion": "version()/metadata() no encuentra el dist en el entorno actual.",
+        "soluciones": ["pip install del paquete", "Mismo venv que ejecuta el script"],
+    },
+    r"zoneinfo\.ZoneInfoNotFoundError|No time zone found with key": {
+        "titulo": "Zona horaria IANA",
+        "explicacion": "No hay datos tzdata para esa clave o el sistema no los expone.",
+        "soluciones": ["Instalá tzdata (paquete del SO o pip)", "Clave IANA correcta (America/...)"],
+    },
+    r"concurrent\.futures\.(BrokenProcessPool|BrokenExecutor|BrokenThreadPool)": {
+        "titulo": "Executor roto",
+        "explicacion": "Un worker murió (pickle, crash, OOM) o el pool se cerró.",
+        "soluciones": ["Revisá logs del hijo", "Serialización de args en ProcessPool", "Recreá el executor"],
+    },
+    r"http\.client\.(IncompleteRead|BadStatusLine|RemoteDisconnected|CannotSendRequest)": {
+        "titulo": "Cliente HTTP (stdlib)",
+        "explicacion": "Respuesta truncada, línea de estado inválida o conexión cerrada por el servidor.",
+        "soluciones": ["Reintentos con backoff", "HTTP/1.1 keep-alive y timeouts", "Servidor estable"],
+    },
+    r"urllib\.error\.(HTTPError|URLError)": {
+        "titulo": "urllib — HTTP o URL",
+        "explicacion": "Código HTTP de error o fallo de conexión/DNS/certificado.",
+        "soluciones": ["urlopen con contexto SSL", "User-Agent y red", "except HTTPError y leer code"],
+    },
+    r"requests\.exceptions\.(ConnectionError|ConnectTimeout|ReadTimeout|HTTPError|SSLError|ChunkedEncodingError)": {
+        "titulo": "requests — red o HTTP",
+        "explicacion": "Timeout, TLS, cierre brusco o status 4xx/5xx según raise_for_status.",
+        "soluciones": ["timeout=(connect, read)", "verify= y certifi", "response.raise_for_status()"],
+    },
+    r"socket\.(gaierror|herror)": {
+        "titulo": "socket — DNS / host",
+        "explicacion": "getaddrinfo/gethostbyname falló (nombre, red o /etc/hosts).",
+        "soluciones": ["Typo en hostname", "Conectividad", "IPv6 vs IPv4"],
+    },
+    r"argparse\.(ArgumentError|ArgumentTypeError)": {
+        "titulo": "argparse",
+        "explicacion": "Conflicto de flags, tipo de conversión o valor inválido para type=.",
+        "soluciones": ["add_argument sin nombres duplicados", "type= int con try en custom"],
+    },
+    r"ChildProcessError:|ProcessLookupError:": {
+        "titulo": "Proceso hijo",
+        "explicacion": "PID inexistente, señal a proceso ajeno o wait en hijo ya reaped.",
+        "soluciones": ["Revisá pid y permisos", "os.waitpid con cuidado"],
+    },
+    r"tarfile\.(ReadError|CompressionError|StreamError)": {
+        "titulo": "tarfile",
+        "explicacion": "Archivo corrupto, truncado o compresión no soportada.",
+        "soluciones": ["Integridad del .tar/.gz", "Modo correcto (r:gz, etc.)"],
+    },
+    r"shelve\.Error|dbm\.error|gdbm\.error": {
+        "titulo": "shelve / dbm",
+        "explicacion": "Base clave-valor corrupta, formato o bloqueo.",
+        "soluciones": ["Cerrá el shelve correctamente", "Misma implementación dbm en todos los hosts"],
+    },
+    r"email\.errors\.(MessageError|MessageParseError|HeaderParseError)": {
+        "titulo": "email — parseo",
+        "explicacion": "Cabecera o mensaje MIME mal formado.",
+        "soluciones": ["policy=compat32 vs default", "BytesParser para raw bytes"],
+    },
+    r"ctypes\.ArgumentError": {
+        "titulo": "ctypes — argumento",
+        "explicacion": "Tipo o valor de arg no coincide con argtypes/restype del foreign function.",
+        "soluciones": ["argtypes/restype explícitos", "POINTER y estructuras alineadas"],
+    },
+    r"multiprocessing\.(AuthenticationError|BufferTooShort)": {
+        "titulo": "multiprocessing — auth o buffer",
+        "explicacion": "Clave de conexión incorrecta o recv de bytes más corto que esperado.",
+        "soluciones": ["Misma authkey entre procesos", "recv_bytes con tamaño acordado"],
+    },
+    r"NotImplementedError:": {
+        "titulo": "No implementado",
+        "explicacion": "Código alcanzó raise NotImplementedError o método abstracto sin override real.",
+        "soluciones": ["Implementá el método", "ABC con @abstractmethod consciente"],
+    },
+    r"ExceptionGroup:|BaseExceptionGroup:": {
+        "titulo": "ExceptionGroup (3.11+)",
+        "explicacion": "Varias excepciones agrupadas (asyncio.TaskGroup, except*).",
+        "soluciones": ["except* Tipo", "eg.exceptions y traceback"],
+    },
+    r"StopAsyncIteration": {
+        "titulo": "StopAsyncIteration",
+        "explicacion": "Fin del async iterator; similar a StopIteration en async for.",
+        "soluciones": ["Manejo en agen", "No confundir con GeneratorExit"],
+    },
+    r"tokenize\.TokenError:": {
+        "titulo": "tokenize — token inválido",
+        "explicacion": "tokenize.generate_tokens encontró cadena o bracket mal cerrado.",
+        "soluciones": ["Fuente Python sintácticamente válida", "encode en UTF-8"],
+    },
+    r"getopt\.GetoptError:": {
+        "titulo": "getopt",
+        "explicacion": "Opción desconocida o falta argumento para opción con parámetro.",
+        "soluciones": ["String de opciones correcto", "sys.argv real"],
+    },
+    r"shutil\.(SameFileError|Error|SpecialFileError)": {
+        "titulo": "shutil — copia/movimiento",
+        "explicacion": "Origen y destino son el mismo, disco lleno, o archivo especial.",
+        "soluciones": ["copy2 vs move", "Espacio en disco", "Permisos"],
+    },
+    r"gzip\.BadGzipFile|EOFError.*gzip": {
+        "titulo": "gzip",
+        "explicacion": "Archivo no es gzip válido o está truncado.",
+        "soluciones": ["Magic bytes", "Descarga completa"],
+    },
+    r"bz2\.(BZ2Compressor|BZ2Decompressor)|OSError.*bz2": {
+        "titulo": "bz2",
+        "explicacion": "Datos comprimidos corruptos o stream incompleto.",
+        "soluciones": ["Integridad del archivo", "Modo correcto r/w"],
+    },
+    r"lzma\.LZMAError|lzma\.error": {
+        "titulo": "lzma / .xz",
+        "explicacion": "Flujo xz/lzma corrupto o filtros incompatibles.",
+        "soluciones": ["Archivo completo", "format= auto"],
+    },
+    r"decimal\.(InvalidOperation|DivisionByZero|Overflow|Underflow|ConversionSyntax)": {
+        "titulo": "decimal",
+        "explicacion": "Operación decimal inválida según context (precisión, traps).",
+        "soluciones": ["localcontext()", "traps y precisión", "Validá strings con Decimal()"],
+    },
+    r"statistics\.StatisticsError:": {
+        "titulo": "statistics",
+        "explicacion": "median/mode/variance con datos insuficientes o multimodal ambiguo.",
+        "soluciones": ["Lista no vacía", "Revisá mode con empates"],
+    },
+    r"weakref\.ReferenceError:": {
+        "titulo": "weakref",
+        "explicacion": "Referencia débil ya invalidada al objeto recolectado.",
+        "soluciones": ["Comprobá ref() antes de usar", "No confíes en weakref para lógica crítica sin lock"],
+    },
+    r"locale\.Error:": {
+        "titulo": "locale",
+        "explicacion": "setlocale con nombre de locale no disponible en el SO.",
+        "soluciones": ["locale -a", "C.UTF-8 fallback", "LANG en entorno"],
+    },
+    r"codecs\.(LookupError|CodecRegistryError|CodecEncodeError|CodecDecodeError)": {
+        "titulo": "codecs",
+        "explicacion": "Encoding desconocido o codec falló al codificar/decodificar.",
+        "soluciones": ["encoding válido", "errors='replace'", "Registrar codec custom"],
+    },
+    r"graphlib\.CycleError:": {
+        "titulo": "graphlib — ciclo",
+        "explicacion": "TopologicalSorter encontró ciclo en el grafo de dependencias.",
+        "soluciones": ["Romper ciclo en datos", "Detectar SCC antes"],
+    },
+    r"sqlite3\.(IntegrityError|OperationalError|ProgrammingError|DatabaseError)": {
+        "titulo": "sqlite3 — SQL",
+        "explicacion": "Constraint, BD bloqueada, SQL inválido o API mal usada.",
+        "soluciones": ["timeout= en connect", "PRAGMA busy_timeout", "SQL y placeholders"],
+    },
+    r"smtplib\.(SMTPException|SMTPAuthenticationError|SMTPServerDisconnected)": {
+        "titulo": "smtplib",
+        "explicacion": "Servidor SMTP rechazó auth, TLS o cerró conexión.",
+        "soluciones": ["starttls()", "Puerto 587/465", "Credenciales y app password"],
+    },
+    r"ftplib\.(error_perm|error_temp|error_reply)": {
+        "titulo": "ftplib",
+        "explicacion": "Código de respuesta FTP 4xx/5xx o protocolo inesperado.",
+        "soluciones": ["Usuario/pass correctos", "Modo PASV", "Firewall"],
+    },
+    r"imaplib\.IMAP4\.error|poplib\.error_proto": {
+        "titulo": "imaplib / poplib",
+        "explicacion": "Servidor de correo respondió fuera de protocolo o error de auth.",
+        "soluciones": ["SSL context", "OAuth2 si el proveedor lo exige"],
+    },
+    r"nntplib\.(NNTPTemporaryError|NNTPPermanentError|NNTPReplyError)": {
+        "titulo": "nntplib (NNTP)",
+        "explicacion": "Servidor de noticias rechazó comando o grupo inexistente.",
+        "soluciones": ["Puerto y TLS", "Nombre de grupo exacto"],
+    },
+    r"plistlib\.InvalidFileException": {
+        "titulo": "plistlib",
+        "explicacion": "Archivo plist binario/XML corrupto o no es plist.",
+        "soluciones": ["Validá con plutil en macOS", "Origen del archivo"],
+    },
+    r"Unable to configure (formatter|handler)|dictConfig|fileConfig.*ValueError": {
+        "titulo": "logging — configuración",
+        "explicacion": "fileConfig/dictConfig: sección faltante, clase de handler inexistente o nivel inválido.",
+        "soluciones": ["disable_existing_loggers", "Clase calificada en handlers", "Probar dict mínimo"],
+    },
+    r"asyncio\.(QueueFull|QueueEmpty|IncompleteReadError|LimitOverrunError)": {
+        "titulo": "asyncio — cola o stream",
+        "explicacion": "Cola llena/vacía, lectura incompleta o línea demasiado larga en StreamReader.",
+        "soluciones": ["maxsize y backpressure", "readuntil con limit", "Separador de líneas"],
+    },
+    r"pathlib\.UnsupportedOperation:": {
+        "titulo": "pathlib — operación no soportada",
+        "explicacion": "symlink, hardlink u operación no disponible en el SO o filesystem.",
+        "soluciones": ["Comprobá os.name", "Alternativa sin symlink"],
+    },
+    r"badly formed hexadecimal UUID string|InvalidUUIDError": {
+        "titulo": "uuid",
+        "explicacion": "String no cumple formato UUID.",
+        "soluciones": ["UUID() con string válido", "Versión y variant correctos"],
+    },
+    r"array\.error:": {
+        "titulo": "array",
+        "explicacion": "Tipocode o tamaño de elemento incompatible al append/frombytes.",
+        "soluciones": ["typecode correcto", "len de bytes múltiplo del itemsize"],
+    },
+    r"tempfile\.(FileExistsError|NotADirectoryError).*mkdtemp|Unable to create": {
+        "titulo": "tempfile",
+        "explicacion": "No se pudo crear archivo/dir temporal (permisos, disco, colisión).",
+        "soluciones": ["TMPDIR escribible", "prefix único"],
+    },
+    r"mmap\.(error|OSError).*mmap": {
+        "titulo": "mmap",
+        "explicacion": "Archivo vacío, tamaño 0, o acceso mmap inválido.",
+        "soluciones": ["Archivo con tamaño >0", "ACCESS_WRITE coherente"],
+    },
+    r"ipaddress\.(AddressValueError|NetmaskValueError)": {
+        "titulo": "ipaddress",
+        "explicacion": "IPv4/IPv6 o máscara mal formada.",
+        "soluciones": ["ip_address('x') con string válido", "strict=False si aplica"],
+    },
+    r"secrets\.token_|binascii\.Error": {
+        "titulo": "binascii / datos binarios",
+        "explicacion": "Base64/hex mal formado en a2b_base64 u operación similar.",
+        "soluciones": ["Padding correcto en base64", "Datos no truncados"],
+    },
+    r"doctest\.(DocTestFailure|UnexpectedException)": {
+        "titulo": "doctest",
+        "explicacion": "Salida del ejemplo en docstring no coincide o el ejemplo lanzó.",
+        "soluciones": ["Actualizá expected o el código", "NORMALIZE_WHITESPACE"],
+    },
+    r"unittest\.case\.SkipTest|unittest\.SkipTest": {
+        "titulo": "unittest — skip",
+        "explicacion": "Test marcado skip o @skipUnless condición.",
+        "soluciones": ["Es intencional; revisá condición de skip"],
+    },
+    r"subprocess\.SubprocessError|subprocess\.TimeoutExpired": {
+        "titulo": "subprocess — timeout",
+        "explicacion": "communicate(timeout=) expiró o pipe roto.",
+        "soluciones": ["kill() del proceso hijo", "timeout mayor o None"],
+    },
+    r"pickle\.(UnpicklingError|PicklingError)": {
+        "titulo": "pickle — serialización",
+        "explicacion": "Stream corrupto, clase no importable, o protocolo incompatible al unpickle.",
+        "soluciones": ["Misma versión de clases y módulos", "No unpicklear datos no confiables"],
+    },
+    r"ssl\.SSLError|SSL: CERTIFICATE_VERIFY_FAILED|certificate verify failed": {
+        "titulo": "SSL / TLS",
+        "explicacion": "Handshake falló: certificado inválido, cadena rota, hostname o reloj del sistema.",
+        "soluciones": ["Actualizá CA bundle", "verify= con criterio (no desactivar en prod sin motivo)", "SNI y hostname correctos"],
+    },
+    r"queue\.(Full|Empty):": {
+        "titulo": "queue — llena o vacía",
+        "explicacion": "put(block=False) en cola llena o get en vacía según configuración.",
+        "soluciones": ["block=True o timeout", "maxsize mayor", "Manejo explícito en consumidor"],
+    },
+    r"zlib\.error:|CompressionError:.*zlib": {
+        "titulo": "zlib — datos comprimidos",
+        "explicacion": "Flujo gzip/deflate corrupto o truncado.",
+        "soluciones": ["Integridad del archivo", "wbits correcto en decompress"],
+    },
 }
