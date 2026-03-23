@@ -23,6 +23,7 @@ from explain.ub_crash import inferir_riesgo_crash
 from explain.ub_heuristics import collect_ub_heuristic_items
 from explain.ub_risk import inferir_riesgo_ub_desde_patron
 from explain.man_capsule import (
+    anexar_man_specs_desde_rest_inicial,
     fichas_con_capsula_en_orden,
     formatear_ficha_man,
     parse_man_id,
@@ -1250,7 +1251,7 @@ Filtrar entradas completas (mejor que grep, que corta "por qué" / "qué hacer")
         "--man",
         metavar="ID",
         default=None,
-        help="Ficha(s) E1, W2, UB1…; varios: E1-2-5, E1/2/3 o «E1-2 W3 UB1» (mismo comando, -i o stdin)",
+        help="Ficha(s) E1, W2, UB1…; varios: E1-2-5, «E1 W1» o E1 W1 antes del comando; mismo -i o stdin",
     )
     p.add_argument(
         "--man-all",
@@ -1304,6 +1305,7 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
                 file=sys.stderr,
             )
             sys.exit(2)
+        man_specs, rest = anexar_man_specs_desde_rest_inicial(man_specs, rest)
 
     focus_posicional: Optional[list[tuple[str, int]]] = None
     if not args.man:
@@ -1515,6 +1517,7 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
 
     if man_specs is not None:
         bloques: list[str] = []
+        omitidas: list[str] = []
         for kind, ix in man_specs:
             if kind == "E":
                 bucket: list[dict] = errores
@@ -1524,11 +1527,12 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
                 bucket = ub_items
             man_label = f"{kind}{ix}"
             if ix < 1 or ix > len(bucket):
+                omitidas.append(man_label)
                 print(
                     f"explain: no hay {man_label} (hay {len(bucket)} ítem(s) en esa sección).",
                     file=sys.stderr,
                 )
-                sys.exit(2)
+                continue
             item = bucket[ix - 1]
             cap = resolver_capsula(lang, item["patron"], item)
             bloques.append(
@@ -1539,6 +1543,20 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
                     item=item,
                     capsula=cap,
                 ).rstrip("\n"),
+            )
+        if not bloques:
+            if omitidas:
+                print(
+                    "explain: ninguna ficha a mostrar (todos los índices pedidos faltan en el log).",
+                    file=sys.stderr,
+                )
+            sys.exit(2)
+        if omitidas:
+            print(
+                "explain: ficha(s) omitida(s) (no hay ese índice en el log): "
+                + ", ".join(omitidas)
+                + ".",
+                file=sys.stderr,
             )
         if len(bloques) > 1:
             print(("\n" + "━" * 52 + "\n").join(bloques))

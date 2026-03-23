@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from explain.man_capsule import (
+    anexar_man_specs_desde_rest_inicial,
     fichas_con_capsula_en_orden,
     formatear_ficha_man,
     parse_man_id,
@@ -49,6 +50,29 @@ class TestParseManSpec(unittest.TestCase):
         self.assertIsNone(parse_man_spec("E1--2"))
         self.assertIsNone(parse_man_spec("X1-2"))
         self.assertIsNone(parse_man_spec("E1-2 X3"))
+
+
+class TestAnexarManSpecsDesdeRest(unittest.TestCase):
+    def test_peel_w_y_comando(self) -> None:
+        specs, rest = anexar_man_specs_desde_rest_inicial(
+            [("E", 1)], ["W1", "make", "iv"]
+        )
+        self.assertEqual(specs, [("E", 1), ("W", 1)])
+        self.assertEqual(rest, ["make", "iv"])
+
+    def test_sin_peel_si_no_es_id(self) -> None:
+        specs, rest = anexar_man_specs_desde_rest_inicial(
+            [("E", 1)], ["make", "iv"]
+        )
+        self.assertEqual(specs, [("E", 1)])
+        self.assertEqual(rest, ["make", "iv"])
+
+    def test_varios_tokens_man(self) -> None:
+        specs, rest = anexar_man_specs_desde_rest_inicial(
+            [("W", 2)], ["UB1", "gcc", "x.c"]
+        )
+        self.assertEqual(specs, [("W", 2), ("UB", 1)])
+        self.assertEqual(rest, ["gcc", "x.c"])
 
 
 class TestFichasConCapsula(unittest.TestCase):

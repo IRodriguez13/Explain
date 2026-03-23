@@ -59,6 +59,26 @@ class TestTuberiaTokensSoloPista(unittest.TestCase):
             Path(path).unlink(missing_ok=True)
 
 
+class TestManE1W1Stdin(unittest.TestCase):
+    """E1 y W1 en argv separados; si E1 no hay en el log, igual se muestra W1."""
+
+    def test_omite_e1_muestra_w1(self) -> None:
+        log = (
+            "a.c:1:1: warning: unused variable 'x' [-Wunused-variable]\n"
+        )
+        fake_in = io.StringIO(log)
+        fake_in.isatty = lambda: False  # type: ignore[method-assign]
+        out = io.StringIO()
+        err = io.StringIO()
+        with patch("sys.stdin", fake_in):
+            with contextlib.redirect_stdout(out):
+                with contextlib.redirect_stderr(err):
+                    main(["--lang", "C", "--man", "E1", "W1"])
+        self.assertIn("no hay E1", err.getvalue())
+        self.assertIn("W1", out.getvalue())
+        self.assertIn("omitida", err.getvalue().lower())
+
+
 class TestExplainSubprocess(unittest.TestCase):
     def test_help_exit_0(self) -> None:
         r = subprocess.run(

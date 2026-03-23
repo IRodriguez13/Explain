@@ -123,7 +123,9 @@ printf '%s\n%s\n' \
 
 **Alias `-f` y `-F`:** mismo valor que **`--man`** (`explain -f E1-2-5 …`).
 
-**Varias fichas en un solo `--man` / `-f` / `-F`:** misma categoría con `-` o `/` entre números (`E1-2-5`, `E1/2/3`, `W2-6-7`, `UB1-2`); varios grupos separados por espacio (entre comillas en el shell): `E1-2 W3 UB1`. `E12` es el ítem 12, no «E1 y E2»; para dos errores usá `E1-2`.
+**Varias fichas en un solo `--man` / `-f` / `-F`:** misma categoría con `-` o `/` entre números (`E1-2-5`, `E1/2/3`, `W2-6-7`, `UB1-2`); varios grupos separados por espacio (entre comillas en el shell): `E1-2 W3 UB1`. También podés separar IDs en argv: `explain --man E1 W1 make iv` (los tokens `W1`, `UB2`, … inmediatamente después del valor de `--man` cuentan como más fichas; lo que sigue es el comando). `E12` es el ítem 12, no «E1 y E2»; para dos errores usá `E1-2`.
+
+**Índice pedido que no existe:** si pedís `E1` y no hay errores, verás el aviso en stderr y, si había más fichas (`W1`, …), igual se imprimen las que sí existan; exit 2 solo cuando **ninguna** ficha pudo mostrarse.
 
 **Cápsula en `--man`:** en **C**, **C++**, **Assembly**, **Python**, **JavaScript**, **Rust** y **C#**, la base actual (`explain/patterns/` por idioma) tiene **una entrada manual por cada clave regex** en `explain/capsules/`: bloques **incorrecto / corregido** ilustrativos, «Qué pasó» y regla. Archivos principales: `c_lang.py`, `c_capsules_extended.py`, `c_capsules_gap.py`, `asm_lang.py`, `cpp_capsules.py`; `rust_capsules.py` (Rust); `handwritten_extra.py` con `python_priority_capsules.py`, `js_priority_capsules.py`, `csharp_capsules.py`. **Si** en el futuro un patrón nuevo en `patterns/` no tuviera aún ficha en `capsules/`, **`resolver_capsula`** generaría una **cápsula sintética** (referencia al mensaje crudo + texto desde la base + **Lista de acciones**).
 

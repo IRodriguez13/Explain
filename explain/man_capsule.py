@@ -68,6 +68,27 @@ def parse_man_id(s: str) -> Optional[tuple[str, int]]:
     return "UB", num
 
 
+def anexar_man_specs_desde_rest_inicial(
+    man_specs: List[Tuple[str, int]], rest: List[str]
+) -> Tuple[List[Tuple[str, int]], List[str]]:
+    """
+    Tras ``--man E1``, consume de ``rest`` los tokens consecutivos ``W1``, ``UB2``, …
+    (misma forma que :func:`parse_man_id`) antes del comando real.
+
+    Ej.: ``explain --man E1 W1 make iv`` → specs ``E1, W1`` y ``rest`` = ``[make, iv]``.
+    Sigue siendo válido ``--man 'E1 W1' make iv`` (todo en un solo argumento).
+    """
+    out: List[Tuple[str, int]] = list(man_specs)
+    rest2 = list(rest)
+    while rest2:
+        one = parse_man_id(rest2[0])
+        if one is None:
+            break
+        out.append(one)
+        rest2 = rest2[1:]
+    return out, rest2
+
+
 def formatear_ficha_man(
     *,
     lenguaje: str,
