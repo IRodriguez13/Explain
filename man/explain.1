@@ -37,6 +37,11 @@ El lenguaje de la base de patrones se infiere con
 .B \-\-lang auto
 (valor por defecto): herramienta invocada, extensiones en la línea de comandos y en la salida,
 y forma del mensaje.
+.PP
+Los mensajes que no coinciden con la base pueden listarse al final en dos bloques de \fBfeedback\fR:
+\fBDesconocidos\fR (errores o enlace sin patrón) y
+\fBAdvertencias fuera de la base\fR (warnings sin patrón; tope \fB\-\-max\-warnings\fR).
+Con \fB\-\-ub\-hints\fR, en C/C++/ensamblador puede aparecer contexto para indicios de comportamiento indefinido según flags, sanitizers o etiquetas del estilo \fB[\-Wnombre]\fR; en otros lenguajes la opción se ignora y se indica en la salida.
 .SH OPCIONES
 .TP
 .BR \-m " " \fITEXTO\fR ", " \-\-match " " \fITEXTO\fR
@@ -64,14 +69,59 @@ Escribe la salida cruda completa en el error estándar antes del resumen.
 Formato de salida extendido; por defecto se usa un formato compacto.
 .TP
 .BR \-nw ", " \-\-no\-warnings
-Omite advertencias: no lista bloques explicados ni líneas con \fBwarning\fR. Por defecto los errores van primero y las advertencias en sección aparte.
+Omite advertencias: no lista bloques explicados ni la sección de advertencias sin patrón (feedback). Por defecto los errores van primero y las advertencias en sección aparte.
 .TP
 .BI \-\-max\-warnings " N"
-Máximo de líneas de warning a listar (default: 5).
+Máximo de advertencias sin patrón en la sección de feedback al final (default: 5).
 .TP
 .BR \-cnt ", " \-\-count
-Imprime solo conteos (errores, advertencias explicadas, líneas con \fBwarning\fR, desconocidos, total explicado). Respeta
+Imprime solo conteos (errores, advertencias explicadas, advertencias sin patrón, desconocidos, total explicado). Respeta
 .BR \-m " y " \-nw .
+.TP
+.BR \-f ", " \-F ", " \-\-man " ID"
+Ficha(s) didáctica(s). Un ítem
+.I E1 ", " W2 ", " UB3
+etc.; varios de la misma categoría con
+.I E1\-2\-5
+o
+.I E1/2/3
+y grupos distintos separados por espacio (entre comillas en el shell), p. ej.
+.IR «E1\-2 W3 UB1» .
+Misma entrada (comando,
+.BI \-i " RUTA
+o tubería con el log
+.B crudo
+del compilador, no la salida de otro
+.BR explain ).
+.B \-i
+aquí es solo
+.BR \-\-input\-file ,
+no lista de IDs.
+En
+.BR C ", " C++ ", " Assembly ", " Python ", " JavaScript ", " Rust " y " C# ,
+la base versionada incluye una ficha manual por cada regex en
+.IR explain/capsules/
+.RI ( ejemplos incorrecto/correcto en
+.BR \-\-man ).
+Si un patrón nuevo careciera aún de ficha, se construiría una cápsula sintética desde
+.IR explain/patterns/ .
+Incompatible con
+.BR \-\-count .
+.TP
+.B \-\-man\-all
+Imprime una ficha tras otra solo para ítems con cápsula
+.I escrita a mano
+en
+.IR explain/capsules/
+(no incluye cápsulas sintéticas).
+.TP
+.BI \-i " RUTA ", " \-\-input\-file " RUTA
+Lee el log desde archivo (UTF-8). No combinar con comando posicional ni
+.BR \-\-shell .
+.TP
+.B \-\-install\-shell\-completions
+Copia autocompletado bash/zsh/fish al home (Unix). No acepta comando posicional.
+Tras clonar: \fBmake dev\fR, o \fBpip install -e .\fR seguido de \fBexplain --install-shell-completions\fR.
 .TP
 .BI \-\-shell " CMD"
 Ejecuta

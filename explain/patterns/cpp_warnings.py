@@ -31,7 +31,7 @@ WARNINGS_CPP = {
         "explicacion": "VLA es extensión de GCC, no C++ estándar.",
         "soluciones": ["Usa std::vector o std::array con tamaño fijo."],
     },
-    r"warning:.*sign-conversion|warning:.*sign conversion": {
+    r"warning:.*sign-conversion|warning:.*sign conversion|warning:.*may change the sign of the result": {
         "titulo": "Conversión con cambio de signo",
         "explicacion": "signed ↔ unsigned puede cambiar el valor representado.",
         "soluciones": ["static_cast explícito", "Mismo signo en ambos lados"],

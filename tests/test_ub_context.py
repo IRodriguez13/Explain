@@ -16,6 +16,23 @@ class TestContextoUbHints(unittest.TestCase):
             )
         )
 
+    def test_etiqueta_w_en_diagnostico(self) -> None:
+        self.assertTrue(
+            contexto_habilita_ub_hints(
+                "edit.c:75:6: warning: bad cast [-Wint-conversion]\n",
+                [],
+            )
+        )
+
+    def test_archivo_c_no_dispara_cc_suelto(self) -> None:
+        """La «c» de «.c:» no debe interpretarse como invocación «cc»."""
+        self.assertFalse(
+            contexto_habilita_ub_hints(
+                "edit.c:75:6: error: conflicting types for ‘backup_file’\n",
+                [],
+            )
+        )
+
     def test_wall_en_salida_con_gcc(self) -> None:
         self.assertTrue(
             contexto_habilita_ub_hints(

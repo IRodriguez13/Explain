@@ -266,4 +266,34 @@ ERRORES_CSHARP = {
         "explicacion": "Usás sintaxis de C# más nueva que la del proyecto (LangVersion).",
         "soluciones": ["<LangVersion> en csproj", "preview si es intencional"],
     },
+    r"CS0161:.*not all code paths return a value": {
+        "titulo": "CS0161 — return faltante",
+        "explicacion": "Función con tipo de retorno no void no retorna en todos los caminos.",
+        "soluciones": ["return en cada rama", "throw en casos imposibles"],
+    },
+    r"CS0236:.*field initializers cannot reference": {
+        "titulo": "CS0236 — inicializador de campo",
+        "explicacion": "Un campo no estático no puede inicializarse con otro campo de instancia en el mismo orden.",
+        "soluciones": ["Inicializá en el constructor", "static readonly para constantes de tipo"],
+    },
+    r"CS0841:.*Cannot use local variable": {
+        "titulo": "CS0841 — variable antes de asignar",
+        "explicacion": "Leés una variable local antes de que el compilador considere asignada (definite assignment).",
+        "soluciones": ["Inicializá antes del uso", "Reordená declaraciones"],
+    },
+    r"CS0200:.*Property or indexer.*cannot be assigned to": {
+        "titulo": "CS0200 — propiedad solo lectura",
+        "explicacion": "Asignás a una propiedad sin setter o con init ya consumido.",
+        "soluciones": ["Agregá set", "Usá ctor/init", "Campo privado con lógica"],
+    },
+    r"CS1504:.*Source file.*could not be opened": {
+        "titulo": "CS1504 — archivo fuente",
+        "explicacion": "El compilador no pudo abrir un .cs (ruta, permisos, archivo borrado).",
+        "soluciones": ["Ruta en csproj", "Archivo en disco", "Encoding"],
+    },
+    r"NETSDK1045:|The current .NET SDK does not support": {
+        "titulo": "SDK .NET insuficiente",
+        "explicacion": "El TargetFramework requiere un SDK más nuevo del instalado.",
+        "soluciones": ["Instalá SDK más reciente", "global.json con versión", "Bajá netX.Y del csproj"],
+    },
 }

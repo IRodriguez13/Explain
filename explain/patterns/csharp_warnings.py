@@ -69,4 +69,19 @@ WARNINGS_CSHARP = {
             "Si solo devolvés un valor ya listo, usa Task.FromResult.",
         ],
     },
+    r"warning CS0162:.*Unreachable code": {
+        "titulo": "CS0162: código inalcanzable",
+        "explicacion": "Hay código después de return/throw que nunca se ejecuta.",
+        "soluciones": ["Eliminá el bloque muerto", "Corregí la condición del if"],
+    },
+    r"warning CS8321:": {
+        "titulo": "CS8321: función local no usada",
+        "explicacion": "Declaraste una función local que nunca se referencia.",
+        "soluciones": ["Eliminá la función o usala", "static local si aplica en versiones nuevas"],
+    },
+    r"\bwarning MSB\d{3,5}:": {
+        "titulo": "Advertencia MSBuild",
+        "explicacion": "MSBuild avisa de referencias, rutas, caché o tareas.",
+        "soluciones": ["Leé el código MSBxxxx en docs de Microsoft", "Revisá csproj y Directory.Build.props"],
+    },
 }

@@ -31,6 +31,24 @@ WARNINGS_C = {
         "explicacion": "Comparas int con size_t (u otro unsigned). Los valores negativos se convierten a unsigned grandes y el bucle o la condición pueden fallar.",
         "soluciones": ["Usa el mismo tipo en ambos lados, cast explícito documentado, o tipos con signo coherentes."],
     },
+    r"warning:.*sign-conversion|warning:.*may change the sign of the result": {
+        "titulo": "Conversión signed/unsigned con posible cambio de signo (-Wsign-conversion)",
+        "explicacion": "Mezclas tipos con y sin signo; un negativo puede interpretarse como un valor enorme en unsigned y romper comparaciones o bucles.",
+        "soluciones": [
+            "Unificá signo en la expresión (p. ej. size_t con índices y longitudes).",
+            "static_cast / cast explícito documentado si la conversión es intencional.",
+        ],
+    },
+    r"warning:.*unused but set variable|warning:.*set but not used": {
+        "titulo": "Variable asignada y nunca leída",
+        "explicacion": "Se escribe en la variable pero ninguna lectura la usa; suele ser olvido o código muerto tras un refactor.",
+        "soluciones": ["Eliminá la variable o usala", "Si era para depuración, marcala con (void)x o __attribute__((unused))"],
+    },
+    r"warning:.*ignored-qualifiers": {
+        "titulo": "Calificadores ignorados (const/volatile) en tipo",
+        "explicacion": "El compilador ignora const/volatile en un contexto donde no aplican (p. ej. typedef o valor por copia mal declarado).",
+        "soluciones": ["Revisá la firma: const en puntero vs en valor", "Alineá el tipo con el uso real"],
+    },
     r"warning:.*format .* expects": {
         "titulo": "printf/scanf: formato no coincide con los argumentos",
         "explicacion": "El especificador de formato (%d, %s, %zu…) no encaja con el tipo real del argumento → UB o salida basura.",
@@ -142,9 +160,9 @@ WARNINGS_C = {
         "explicacion": "La condición es siempre verdadera o siempre falsa (typo o variable equivocada).",
         "soluciones": ["Revisá == vs =", "Variable correcta en ambos lados"],
     },
-    r"warning:.*implicit conversion.*precision|warning:.*conversion.*may change value": {
-        "titulo": "Conversión con pérdida de precisión",
-        "explicacion": "Se convierte a un tipo más estrecho y puede truncarse el valor.",
+    r"warning:.*implicit conversion.*precision|warning:.*conversion.*may change value|warning:.*conversion from.*may alter its value": {
+        "titulo": "Conversión con pérdida o cambio de valor",
+        "explicacion": "Se convierte a un tipo más estrecho o incompatible y el valor puede truncarse o interpretarse distinto.",
         "soluciones": ["Cast explícito", "Tipo intermedio más ancho", "-Wconversion con criterio"],
     },
     r"warning:.*enum.*conversion|warning:.*enumeral.*mismatch": {

@@ -171,4 +171,54 @@ ERRORES_RUST = {
         "explicacion": "Usás API nightly sin #![feature(...)].",
         "soluciones": ["#![feature]", "O esperá estabilización", "toolchain nightly"],
     },
+    r"error\[E0505\]: cannot move out of": {
+        "titulo": "E0505 — move desde valor prestado",
+        "explicacion": "Movés un valor que todavía está prestado en otro sitio.",
+        "soluciones": ["Terminá el préstamo antes del move", "clone()", "reordená el código"],
+    },
+    r"error\[E0597\]:.*does not live long enough": {
+        "titulo": "E0597 — vida insuficiente",
+        "explicacion": "Una referencia viviría más que el dato al que apunta.",
+        "soluciones": ["Owned (String, Vec) en lugar de &str interno", "Acortá el scope del prestador"],
+    },
+    r"error\[E0609\]: no field.*on type": {
+        "titulo": "E0609 — campo inexistente",
+        "explicacion": "El tipo no tiene ese campo (typo o tipo equivocado).",
+        "soluciones": ["Revisá el nombre del campo", "Deref hasta el struct correcto"],
+    },
+    r"error\[E0616\]: field.*of.*is private": {
+        "titulo": "E0616 — campo privado",
+        "explicacion": "Accedés a un campo no público de otro módulo.",
+        "soluciones": ["pub field", "getter público en el tipo"],
+    },
+    r"error\[E0515\]: cannot return reference to": {
+        "titulo": "E0515 — referencia a valor local",
+        "explicacion": "Retornás una referencia a datos que no sobreviven a la función.",
+        "soluciones": ["Tipo de retorno owned (String, Vec)", "Parámetro con lifetime de entrada"],
+    },
+    r"error: could not find `Cargo\.toml`|error: manifest path .* does not exist": {
+        "titulo": "Cargo — sin manifest",
+        "explicacion": "cargo se ejecutó en un directorio sin Cargo.toml o la ruta `--manifest-path` es incorrecta.",
+        "soluciones": ["cd al crate raíz", "--manifest-path correcto"],
+    },
+    r"error: linking with `.*` failed:": {
+        "titulo": "Enlazado Rust falló",
+        "explicacion": "rustc/cargo no pudo enlazar (símbolo faltante, librería del sistema, etc.).",
+        "soluciones": ["pkg-config / -l en build.rs", "Instalá dev libs (openssl, sqlite)", "target correcto"],
+    },
+    r"error: package.*depends on package.*with multiple features": {
+        "titulo": "Cargo — features incompatibles",
+        "explicacion": "Dos dependencias piden el mismo crate con conjuntos de features que no se pueden unificar.",
+        "soluciones": ["[dependencies] features explícitos", "patch o versión única del crate"],
+    },
+    r"error\[E0583\]: file not found for module": {
+        "titulo": "E0583 — archivo de módulo",
+        "explicacion": "mod foo; esperaba foo.rs o foo/mod.rs y no existe.",
+        "soluciones": ["Creá el archivo", "Renombrá el módulo", "pub mod path"],
+    },
+    r"error\[E0592\]:.*duplicate definitions": {
+        "titulo": "E0592 — definición duplicada",
+        "explicacion": "Dos items con el mismo nombre en el mismo ámbito (p. ej. fn repetida).",
+        "soluciones": ["Eliminá la copia", "Renombrá o usá módulos distintos"],
+    },
 }

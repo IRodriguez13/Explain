@@ -48,6 +48,9 @@ _MODERADO: tuple[str, ...] = (
     "null-dereference",
     "pointer.*integer conversion",
     "integer.*pointer.*without a cast",
+    # Patrones de c_lang.py (regex sin «warning:») — inferir compara el string del regex tal cual:
+    "makesintegerfrompointerwithoutacast",
+    "makespointerfromintegerwithoutacast",
     "tautological",
     "self-comparison",
     "always true",

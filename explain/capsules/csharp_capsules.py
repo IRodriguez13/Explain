@@ -1,0 +1,583 @@
+# Fichas --man para C#: errores del compilador, advertencias y frameworks (prioridad alta).
+# Claves = regex exactas de explain/patterns/csharp*.py
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def _(
+    mal: str,
+    bien: str,
+    que: str,
+    regla: str,
+) -> dict[str, Any]:
+    return {
+        "codigo_incorrecto": mal,
+        "codigo_correcto": bien,
+        "que_paso": que,
+        "regla": regla,
+    }
+
+
+CAPSULES_CSHARP_HANDWRITTEN: dict[str, dict[str, Any]] = {
+    # --- Errores CS (csharp.py) ---
+    r"CS0103:.*does not exist in the current context": _(
+        "void M() { Console.WriteLine(x); }",
+        "int x = 1;\nvoid M() { Console.WriteLine(x); }",
+        "El nombre no existe en este ámbito: typo, falta de campo/local, o using.",
+        "Revisá `using`, calificación `Clase.Miembro`, y que el miembro exista y sea accesible.",
+    ),
+    r"CS0246:.*type or namespace name .* could not be found": _(
+        "List<int> xs = new();",
+        "using System.Collections.Generic;\nList<int> xs = new();",
+        "No se resuelve el tipo: falta `using`, typo, o referencia al ensamblado.",
+        "`dotnet add package` / ProjectReference y el `using` del namespace correcto.",
+    ),
+    r"CS1061:.*does not contain a definition for": _(
+        """var s = "a";
+s.Append("b");""",
+        """var s = "a";
+s += "b";""",
+        "No hay ese método o propiedad; extension methods requieren `using` del namespace.",
+        "IntelliSense/API del tipo; `using` de static class de extensiones.",
+    ),
+    r"CS0029:.*Cannot implicitly convert type": _(
+        "string s = 42;",
+        "string s = 42.ToString();",
+        "No existe conversión implícita entre esos tipos.",
+        "Cast explícito, `Parse`/`TryParse`, o cambiá el tipo de la variable.",
+    ),
+    r"CS0026:.*keyword.*this.*static": _(
+        "static void F() { this.X = 1; }",
+        "void F() { this.X = 1; }  // método de instancia",
+        "`this` no existe en miembros estáticos.",
+        "Hacé el método de instancia o pasá el objeto como parámetro.",
+    ),
+    r"CS0101:.*namespace.*already contains a definition": _(
+        "namespace N { class A {} class A {} }",
+        "namespace N { class A {} class B {} }",
+        "Dos tipos con el mismo nombre en el mismo namespace.",
+        "Renombrá uno; `partial` solo si es intencional el mismo tipo.",
+    ),
+    r"CS0111:.*already defines a member": _(
+        "class C { void M() {} void M() {} }",
+        "class C { void M(int x) {} void M(string s) {} }",
+        "Dos miembros con la misma firma.",
+        "Sobrecarga válida = distintos parámetros; eliminá duplicados.",
+    ),
+    r"CS0122:.*inaccessible due to its protection level": _(
+        "other.Helper();  // Helper es private en otra clase",
+        "internal/public según ensamblado; o método público en la API.",
+        "`private`/`protected` impide el acceso desde aquí.",
+        "Expone API pública, `InternalsVisibleTo`, o refactor de encapsulación.",
+    ),
+    r"CS0162:.*Unreachable code": _(
+        "return;\nConsole.WriteLine(1);",
+        "Console.WriteLine(1);\nreturn;",
+        "Código después de `return`/`throw` inalcanzable.",
+        "Eliminá código muerto o corregí el flujo.",
+    ),
+    r"CS0234:.*does not exist in the namespace": _(
+        "using System;\nX.StringBuilder sb;",
+        "using System;\nusing System.Text;\nStringBuilder sb = new();",
+        "El subnombre no existe bajo ese namespace.",
+        "`using` del namespace anidado correcto (p. ej. `System.Text`).",
+    ),
+    r"CS0246:.*could not be found \(are you missing": _(
+        "// error sugiere using X",
+        "using X;  // o referencia de proyecto",
+        "CS0246 con pista explícita del compilador.",
+        "Seguí la sugerencia del mensaje (using o referencia).",
+    ),
+    r"CS0311:.*cannot be used as type parameter": _(
+        "class Box<T> where T : struct { }\nclass X { }\nBox<X> b;",
+        "Box<int> b;",
+        "El argumento de tipo no cumple la restricción `where`.",
+        "Ajustá el tipo concreto o relajá/ampliá las restricciones del genérico.",
+    ),
+    r"CS0400:.*could not be found in the global namespace": _(
+        "global::NoExiste x;",
+        "global::System.Console.WriteLine(1);",
+        "El nombre tras `global::` no existe.",
+        "Solo usá `global::` con namespaces reales; evitá alias rotos.",
+    ),
+    r"CS0413:.*field.*assigned but its value is never used": _(
+        "readonly int x = 1; // nunca leído",
+        "readonly int x = 1;\nvoid M() => Console.WriteLine(x);",
+        "Campo asignado pero nunca leído (a veces warning nivel error).",
+        "Usalo, eliminálo, o documentá con `#pragma`/atributo si es intencional.",
+    ),
+    r"CS0535:.*does not implement interface member": _(
+        "class C : IDisposable { }",
+        "class C : IDisposable { public void Dispose() { } }",
+        "Falta implementar miembro(s) de la interfaz.",
+        "Implementá todos los miembros o hacé la clase abstracta.",
+    ),
+    r"CS0542:.*member names cannot be the same as their enclosing type": _(
+        "class Foo { public int Foo => 1; }",
+        "class Foo { public int Value => 1; }",
+        "Miembro no puede llamarse igual que el tipo contenedor.",
+        "Renombrá propiedad/método o el tipo.",
+    ),
+    r"CS0552:.*conversion routines must take one parameter": _(
+        "public static implicit operator int(A a) => 1;\npublic static implicit operator int(A a, int x) => 1;",
+        "public static implicit operator int(A a) => 1;",
+        "Operadores de conversión deben tener exactamente un parámetro.",
+        "Un solo parámetro del tipo fuente.",
+    ),
+    r"CS0708:.*static classes cannot have instance constructors": _(
+        "static class U { public U() {} }",
+        "static class U { static U() {} }",
+        "Clase `static` no puede tener ctor de instancia.",
+        "Constructor estático opcional; lógica en métodos estáticos.",
+    ),
+    r"CS0815:.*cannot assign void to an implicitly-typed variable": _(
+        "var x = Console.WriteLine(\"\");",
+        "Console.WriteLine(\"\");",
+        "`var` no puede inferirse desde `void`.",
+        "No asignes el resultado de métodos void.",
+    ),
+    r"CS1002:.*; expected": _(
+        "int x = 1",
+        "int x = 1;",
+        "Falta `;` o hay error previo que confunde al parser.",
+        "Revisá la línea anterior y balance de `{}`.",
+    ),
+    r"CS1513:.*} expected": _(
+        "class C { void M() { if (true) { ",
+        "class C { void M() { if (true) { } } }",
+        "Falta `}` para cerrar bloque.",
+        "Balanceá llaves y paréntesis.",
+    ),
+    r"CS1612:.*Cannot modify the return value": _(
+        "struct S { public int X; }\nS F() => new();\nvoid G() { F().X = 1; }",
+        "var s = F();\ns.X = 1;",
+        "No podés mutar un campo de un struct devuelto por propiedad/método (copia temporal).",
+        "Guardá en variable local y modificá esa copia; o usá `class` si necesitás referencia.",
+    ),
+    r"CS1503:.*Argument.*cannot convert from": _(
+        "void F(int x) {}\nF(\"a\");",
+        "void F(int x) {}\nF(1);",
+        "El argumento no convierte al tipo del parámetro.",
+        "Cast, sobrecarga correcta, o corregí el tipo del argumento.",
+    ),
+    r"CS1501:.*No overload for method.*takes": _(
+        "Console.WriteLine(1, 2, 3, 4, 5);",
+        "Console.WriteLine(\"{0} {1}\", 1, 2);",
+        "Ninguna sobrecarga coincide con la cantidad/tipos de argumentos.",
+        "Revisá sobrecargas disponibles en la documentación.",
+    ),
+    r"CS0165:.*Use of unassigned local variable": _(
+        "int x;\nConsole.WriteLine(x);",
+        "int x = 0;\nConsole.WriteLine(x);",
+        "Variable local leída antes de asignar en todos los caminos.",
+        "Inicializá al declarar o asigná en todas las ramas.",
+    ),
+    r"CS8600:|CS8602:|CS8603:|CS8604:|CS8618:|CS8629:": _(
+        "#nullable enable\nstring? s = null;\nint n = s.Length;",
+        "#nullable enable\nstring? s = null;\nint n = s?.Length ?? 0;",
+        "Nullable reference types: posible null o asignación null a no-nullable.",
+        "`?.`, `!` con invariante, `required`, inicialización en ctor.",
+    ),
+    r"CS4014:.*not awaited": _(
+        "async Task T() => await Task.Delay(1);\nvoid C() { T(); }",
+        "async Task C() { await T(); }",
+        "Llamás async sin await; errores pueden perderse.",
+        "`await`, `Wait()` con cuidado, o `_ = T()` documentado fire-and-forget.",
+    ),
+    r"CS1998:.*async method lacks.*await": _(
+        "async Task M() { return; }",
+        "Task M() { return Task.CompletedTask; }",
+        "`async` sin `await` suele ser innecesario.",
+        "Quitá `async` o agregá `await` real.",
+    ),
+    r"CS5001:.*does not contain.*Main.*suitable entry point": _(
+        "// librería sin Main ni top-level",
+        "// añadí static void Main o top-level en el ejecutable",
+        "Proyecto ejecutable sin punto de entrada.",
+        "`Main` o top-level statements en un solo archivo de entrada.",
+    ),
+    r"CS8802:.*Only one compilation unit can have top-level statements": _(
+        "// dos archivos .cs con sentencias sueltas",
+        "// un solo archivo con top-level; el resto con Main o solo tipos",
+        "Solo una unidad puede tener top-level statements.",
+        "Consolidá o mové a `Main`.",
+    ),
+    r"CS0579:.*Duplicate.*attribute": _(
+        "[Serializable][Serializable] class C {}",
+        "[Serializable] class C {}",
+        "Atributo duplicado donde no se permite.",
+        "Eliminá el duplicado.",
+    ),
+    r"CS0840:.*must declare a body|abstract.*cannot have body": _(
+        "abstract class A { public abstract void M() { } }",
+        "abstract class A { public abstract void M(); }",
+        "`abstract` sin cuerpo; métodos con cuerpo no pueden ser abstract mal mezclados.",
+        "Seguí reglas abstract/override/sealed del lenguaje.",
+    ),
+    r"CS1729:.*does not contain a constructor": _(
+        "new Foo(1);  // Foo solo tiene ctor sin args",
+        "new Foo();",
+        "Ningún constructor coincide con los argumentos.",
+        "Añadí ctor o pasá los args que existen.",
+    ),
+    r"CS7036:.*There is no argument given that corresponds to the required parameter": _(
+        "record R(int A);\nvar x = new R();",
+        "var x = new R(1);",
+        "Falta parámetro requerido (records posicionales, etc.).",
+        "Pasá todos los required o usá `default` donde aplique.",
+    ),
+    r"CS8209:.*A value of type 'void' may not be assigned": _(
+        "var x = () => Console.WriteLine();",
+        "Action x = () => Console.WriteLine();",
+        "Asignás `void` a variable.",
+        "Usá `Action`/`Func` según retorno.",
+    ),
+    r"CS8917:.*delegate type could not be inferred": _(
+        "M(x => x);  // ambiguo para el compilador",
+        "M((int x) => x);",
+        "No se infiere el tipo del lambda/delegate.",
+        "Tipá parámetros o destino del delegate explícitamente.",
+    ),
+    r"MSB3644:|MSB4018:": _(
+        "# error de MSBuild / targeting pack",
+        "# instalar SDK o targeting pack; revisar TargetFramework en .csproj",
+        "MSBuild: SDK o pack de referencia faltante, o tarea falló.",
+        "`dotnet --list-sdks`, instalar workload, revisar `TargetFramework`.",
+    ),
+    r"CS1001:.*Identifier expected": _(
+        "int ;",
+        "int x;",
+        "Falta identificador donde el parser lo espera.",
+        "Revisá comas, genéricos y palabras clave mal colocadas.",
+    ),
+    r"CS1003:.*Syntax error": _(
+        "int x = ;",
+        "int x = 0;",
+        "Token inesperado o faltante.",
+        "Paréntesis, punto y coma, expresiones completas.",
+    ),
+    r"CS1525:.*Invalid expression term": _(
+        "var x = * 3;",
+        "var x = 3;",
+        "Término de expresión inválido en esa posición.",
+        "Revisá operadores y literales.",
+    ),
+    r"CS1591:.*Missing XML comment": _(
+        "/// proyecto exige documentación XML",
+        "/// <summary>Desc.</summary>\npublic void M() {}",
+        "Proyecto con generación XML y reglas estrictas.",
+        "Añadí `///` o ajustá opciones de documentación en el csproj.",
+    ),
+    r"CS1997:.*async.*cannot return a value": _(
+        "async void M() { return 1; }",
+        "async Task<int> M() { return 1; }",
+        "`async void` no retorna valor al llamador como Task.",
+        "Usá `async Task`/`Task<T>` salvo event handlers.",
+    ),
+    r"CS8072:.*expression tree.*contains": _(
+        "Expression<Func<int>> e = () => M();",
+        "Expression<Func<int>> e = () => 42;",
+        "Árboles de expresión no pueden contener ciertas llamadas.",
+        "Simplificá la lambda o usá compilación en runtime sin Expression.",
+    ),
+    r"CS8121:.*expression of type.*cannot be handled": _(
+        "object o = 1;\nswitch (o) { case string s: break; }",
+        "if (o is string s) { }",
+        "Pattern no aplica al tipo en runtime en ese contexto.",
+        "Revisá orden de patterns y tipos reales.",
+    ),
+    r"CS8509:.*not exhaustive": _(
+        "int x = 1;\nvar y = x switch { 0 => \"a\" };",
+        "var y = x switch { 0 => \"a\", _ => \"b\" };",
+        "Switch expression no cubre todos los valores posibles.",
+        "Añadí brazo `_` o todos los casos del enum.",
+    ),
+    r"CS8767:.*nullability.*mismatch": _(
+        "#nullable enable\npublic override string? M() => null;",
+        "Alineá nullability de override con la base.",
+        "Contrato nullable del override no coincide con el miembro virtual/interfaz.",
+        "Misma anotación `?` y `notnull` que la firma base.",
+    ),
+    r"CS9195:.*file-scoped namespace": _(
+        "namespace A; namespace B; // dos file-scoped",
+        "namespace A;  // un solo file-scoped por archivo",
+        "Solo un file-scoped namespace por archivo.",
+        "Un namespace por archivo o usá bloques `{}` anidados.",
+    ),
+    r"CS0229:.*ambiguity|is ambiguous between": _(
+        "class B : A, I { void M() { base.X(); } }",
+        "Calificá cuál X con interface explícita o base.",
+        "Ambigüedad entre miembros heredados.",
+        "Cast explícito a interfaz o `base.`.",
+    ),
+    r"CS0051:.*inconsistent accessibility": _(
+        "public class C { private class N { } public N Get() => default; }",
+        "public class C { public class N { } public N Get() => default; }",
+        "Tipo público expone tipo menos accesible.",
+        "Hacé pública la parte interna o el retorno menos visible.",
+    ),
+    r"CS1540:.*cannot access protected member": _(
+        "class D : B { void M(B o) { o.Protected(); } }",
+        "class D : B { void M() { Protected(); } }",
+        "Protected solo accesible vía `this` o derivada, no desde otra instancia base.",
+        "Patrón de acceso según reglas C#.",
+    ),
+    r"CS0177:.*out parameter|control leaves.*out parameter": _(
+        "void M(out int x) { return; }",
+        "void M(out int x) { x = 0; }",
+        "Parámetro `out` debe asignarse antes de salir.",
+        "Asigná `out` en todos los caminos.",
+    ),
+    r"CS1622:.*cannot return a value from an iterator": _(
+        "IEnumerable<int> G() { yield return 1; return 2; }",
+        "IEnumerable<int> G() { yield return 1; yield break; }",
+        "Iterador: usá `yield return`/`yield break`, no `return` con valor mezclado mal.",
+        "Seguí el patrón de iteradores.",
+    ),
+    r"CS8370:.*feature.*not available|required language version": _(
+        "if (o is int x) { }  // en LangVersion antigua",
+        "<LangVersion>latest</LangVersion> o patrón compatible.",
+        "La sintaxis requiere versión de lenguaje más nueva.",
+        "Subí `LangVersion` en csproj o reescribí sin la feature.",
+    ),
+    r"CS0161:.*not all code paths return a value": _(
+        "int F(bool b) { if (b) return 1; }",
+        "int F(bool b) { if (b) return 1; return 0; }",
+        "Función con valor de retorno: falta `return` en algún camino.",
+        "Cubrí todos los caminos o lanzá excepción en imposibles.",
+    ),
+    r"CS0236:.*field initializers cannot reference": _(
+        "int a = b; int b = 1;",
+        "int b = 1; int a = b;",
+        "Inicializador de campo no puede referenciar otro campo instancia en cierto orden.",
+        "Reordená o inicializá en ctor.",
+    ),
+    r"CS0841:.*Cannot use local variable": _(
+        "Console.WriteLine(x);\nint x = 1;",
+        "int x = 1;\nConsole.WriteLine(x);",
+        "Uso de local antes de declarar (reglas de definite assignment).",
+        "Declará antes de usar.",
+    ),
+    r"CS0200:.*Property or indexer.*cannot be assigned to": _(
+        "public int P { get; }\nvoid M(C c) { c.P = 1; }",
+        "public int P { get; set; }",
+        "Propiedad sin setter o solo get calculado.",
+        "Añadí `set` o usá ctor/backing field mutable.",
+    ),
+    r"CS1504:.*Source file.*could not be opened": _(
+        "// #line o archivo en csproj no existe",
+        "Corregí ruta del fuente o del link.",
+        "No se pudo abrir un archivo fuente referenciado.",
+        "Rutas del proyecto y archivos incluidos.",
+    ),
+    r"NETSDK1045:|The current .NET SDK does not support": _(
+        "<TargetFramework>net10.0</TargetFramework>  # sin SDK",
+        "Instalá el SDK o bajá TargetFramework soportado.",
+        "El SDK instalado no soporta ese TFM.",
+        "`dotnet --list-sdks` y alinear TFM con SDK instalado.",
+    ),
+    # --- Advertencias (csharp_warnings.py) ---
+    r"warning CS0168:.*is declared but never used": _(
+        "void M() { var x = 1; }",
+        "void M() { }",
+        "Variable local declarada y no usada.",
+        "Eliminá o usá `_ =` / prefijo `_`.",
+    ),
+    r"warning CS0219:.*assigned but its value is never used": _(
+        "var x = 1; x = 2;",
+        "var x = 2;",
+        "Asignación inicial nunca leída antes de reasignar.",
+        "Simplificá o eliminá la primera asignación.",
+    ),
+    r"warning CS0414:.*assigned but its value is never read": _(
+        "class C { int x = 1; }",
+        "class C { int x = 1; int F() => x; }",
+        "Campo privado asignado pero nunca leído.",
+        "Usalo o eliminálo.",
+    ),
+    r"warning CS0649:.*never assigned to": _(
+        "struct S { int x; }",
+        "struct S { public int x; }  // o inicializá en ctor",
+        "Campo nunca asignado (struct puede quedar con basura).",
+        "Inicializá en ctor o valor en sitio.",
+    ),
+    r"warning CS4014:.*not awaited": _(
+        "Task.Run(() => {});",
+        "await Task.Run(() => {});",
+        "Mismo caso que CS4014 en modo warning.",
+        "`await` o descartar explícito.",
+    ),
+    r"warning CS8600:": _(
+        "string s = MaybeNull();",
+        "string? s = MaybeNull();",
+        "Asignación posible null a tipo no nullable.",
+        "Tipá como `?` o validá antes.",
+    ),
+    r"warning CS8602:": _(
+        "void F(string? s) { Console.WriteLine(s.Length); }",
+        "Console.WriteLine(s?.Length ?? 0);",
+        "Desreferencia posible null.",
+        "`?.` o comprobación.",
+    ),
+    r"warning CS8618:": _(
+        "class C { public string P { get; set; } }",
+        "public required string P { get; set; }  // o = \"\";",
+        "Propiedad/campo non-nullable no inicializado en ctor.",
+        "`required`, valor por defecto, o ctor que asigne.",
+    ),
+    r"warning CS8625:": _(
+        "string s = null!;",
+        "string? s = null;",
+        "Literal null a tipo no nullable.",
+        "Usá `?` o `null!` solo si hay invariante.",
+    ),
+    r"warning CS8601:": _(
+        "string x = maybe;",
+        "string? x = maybe;",
+        "Asignación posible null a non-nullable.",
+        "Alineá nullability.",
+    ),
+    r"warning CS8619:": _(
+        "// valores nullability no coinciden en asignación genérica",
+        "Revisá `?` en type arguments.",
+        "Nullability en tipos de tupla/genérico no coincide.",
+        "Ajustá anotaciones `?` y `notnull`.",
+    ),
+    r"warning CS8765:": _(
+        "# nullable mismatch en override de parámetro",
+        "Igualá anotaciones con el miembro base.",
+        "Nullability del parámetro en override no coincide con base.",
+        "Misma firma nullable que virtual/interfaz.",
+    ),
+    r"warning CS1998:": _(
+        "async Task M() { }",
+        "Task M() => Task.CompletedTask;",
+        "async sin await (warning).",
+        "Quitá async o agregá await.",
+    ),
+    r"warning CS0162:.*Unreachable code": _(
+        "return;\nFoo();",
+        "Eliminá Foo.",
+        "Código inalcanzable (warning).",
+        "Limpieza de código muerto.",
+    ),
+    r"warning CS8321:": _(
+        "void M() { int x = 1; void L() { int x = 2; } }",
+        "Renombrá sombra o usá local function con cuidado.",
+        "Local function declarada pero no usada o sombra confusa.",
+        "Invocá la local function o eliminála.",
+    ),
+    r"\bwarning MSB\d{3,5}:": _(
+        "# MSBuild warning en build",
+        "Leé el código MSB en docs de MSBuild.",
+        "Advertencia de MSBuild (props, targets, copia de archivos).",
+        "Diagnóstico en el texto del warning y csproj.",
+    ),
+    # --- Frameworks (csharp_frameworks.py) ---
+    r"Microsoft\.EntityFrameworkCore\.DbUpdateException": _(
+        "// SaveChanges sin manejar constraint",
+        "try { ctx.SaveChanges(); } catch (DbUpdateException ex) { /* InnerException SQL */ }",
+        "EF Core: violación al persistir (unique, FK, etc.).",
+        "Inspeccioná `InnerException`; datos y Fluent API.",
+    ),
+    r"DbUpdateConcurrencyException": _(
+        "// otro proceso modificó la fila",
+        "Reload(); SaveChanges();  // o política de merge",
+        "Token de concurrencia (rowversion) no coincide.",
+        "Manejo de conflicto y reintento.",
+    ),
+    r"InvalidOperationException.*(DbContext|DbSet|OnModelCreating|cannot be used)": _(
+        "// DbContext usado después de Dispose",
+        "await using var ctx = factory.CreateDbContext();",
+        "Contexto disposed o uso inválido del modelo.",
+        "Scopes de DI y lifetime del DbContext.",
+    ),
+    r"SqlException|Microsoft\.Data\.SqlClient\.SqlException": _(
+        "// error del motor SQL Server",
+        "Leé Number y State en la excepción; cadena de conexión y query.",
+        "Error devuelto por SQL Server.",
+        "Códigos de error SQL, timeouts, deadlocks.",
+    ),
+    r"Npgsql\.|PostgresException": _(
+        "// SqlState Postgres",
+        "Inspeccioná SqlState y mensaje de Npgsql.",
+        "Error del servidor PostgreSQL.",
+        "Connection string, SSL, y códigos SQLSTATE.",
+    ),
+    r"Some services are not able to be constructed|Unable to resolve service for type": _(
+        "// falta services.AddScoped<IMy, My>();",
+        "builder.Services.AddScoped<IMy, My>();",
+        "DI de ASP.NET Core: servicio no registrado o ciclo.",
+        "Registrá interfaces; detectá dependencias circulares.",
+    ),
+    r"System\.AggregateException.*One or more errors occurred": _(
+        "Task.WaitAll(t1, t2);  // fallos dentro",
+        "ex.Flatten().InnerExceptions",
+        "Varias tareas fallaron encapsuladas.",
+        "Revisá InnerExceptions o await individual.",
+    ),
+    r"Xunit\.Sdk\.|Xunit\.Runner": _(
+        "[Fact] void T() { Assert.True(false); }",
+        "Corregí expectativa o datos del test.",
+        "xUnit: assert o descubrimiento de tests.",
+        "Mensaje de assert y target framework.",
+    ),
+    r"NUnit\.Framework\.(AssertionException|IgnoreException)|NUnit\.Engine\.NUnitEngineException": _(
+        "Assert.That(x, Is.EqualTo(1));",
+        "Ajustá expected/actual.",
+        "NUnit: fallo de assert o motor.",
+        "Salida Expected vs Actual.",
+    ),
+    r"Newtonsoft\.Json\.(JsonSerializationException|JsonReaderException|JsonWriterException)": _(
+        "JsonConvert.DeserializeObject<T>(\"{\"\");",
+        "JSON válido y propiedades alineadas al modelo.",
+        "Json.NET: texto o modelo incompatible.",
+        "`JsonProperty`, contrato de nombres, `MissingMemberHandling`.",
+    ),
+    r"System\.Text\.Json\.(JsonException|JsonSerializerException)": _(
+        "JsonSerializer.Deserialize<T>(json);",
+        "JsonPropertyName, opciones NamingPolicy, ReferenceHandler.",
+        "System.Text.Json: serialización/deserialización.",
+        "Opciones globales y atributos en propiedades.",
+    ),
+    r"AutoMapper\.AutoMapperMappingException|AutoMapperConfigurationException": _(
+        "mapper.Map<Dst>(src);  // sin CreateMap",
+        "CreateMap<Src, Dst>(); ValidateConfiguration();",
+        "Falta mapa o configuración inválida.",
+        "`CreateMap` y `AssertConfigurationIsValid` en tests.",
+    ),
+    r"Swashbuckle|Swashbuckle\.AspNetCore|NSwag": _(
+        "// conflicto de SchemaId o tipos anónimos",
+        "CustomSchemaIds o tipos explícitos en endpoints.",
+        "Generación OpenAPI falló.",
+        "Documentación Swashbuckle/NSwag para schema conflicts.",
+    ),
+    r"Microsoft\.AspNetCore\.(Routing|Mvc).*ambiguous|AmbiguousMatchException": _(
+        "// dos rutas iguales",
+        "HTTP method, orden, plantillas más específicas.",
+        "Dos endpoints coinciden con la petición.",
+        "Diferenciá por verbo, ruta o constraints.",
+    ),
+    r"AntiforgeryValidationException|Antiforgery.*token": _(
+        "POST sin token antiforgery",
+        "@Html.AntiForgeryToken() + [ValidateAntiForgeryToken]",
+        "CSRF token inválido o ausente.",
+        "Cookie + header/form token alineados; SameSite.",
+    ),
+    r"Microsoft\.IdentityModel|JwtSecurityToken|IDX\d+": _(
+        "ValidateToken(...) falla",
+        "Authority, Audience, IssuerSigningKey, reloj del sistema.",
+        "JWT: firma, audiencia, expiración o metadatos.",
+        "Configuración de `JwtBearer` y claves.",
+    ),
+    r"StackExchange\.Redis\.RedisConnectionException|RedisTimeoutException": _(
+        "ConnectionMultiplexer.Connect(...) falla",
+        "cadena de conexión, abortConnect=false, firewall",
+        "Redis inalcanzable o timeout.",
+        "Multiplexer singleton y timeouts del thread pool.",
+    ),
+}
+
+__all__ = ["CAPSULES_CSHARP_HANDWRITTEN"]

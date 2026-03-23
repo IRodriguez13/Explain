@@ -11,9 +11,10 @@ from __future__ import annotations
 import re
 
 # Invocación del compilador en una línea del log (make V=1, ninja, etc.)
+# «cc» solo si va seguido de espacio: evita coincidir la «c» de «archivo.c:» (\bcc\b).
 _RE_COMPILE_INVOCATION = re.compile(
     r"(?:^|\n)\s*(?:/usr/bin/|/usr/local/bin/)?"
-    r"(?:gcc|g\+\+|clang\+\+?|\bcc1\b|\bcc\b|\bc\+\+\b)\s+[^\n]*"
+    r"(?:gcc|g\+\+|clang\+\+?|clang|\bcc1\b|cc)(?=\s)\s+[^\n]*"
     r"(-fsanitize\s*=\s*[^\s\"']+|-Wall\b|-Wextra\b|-Wpedantic\b|-Wconversion\b|-Wundef\b)",
     re.IGNORECASE | re.MULTILINE,
 )
@@ -43,6 +44,10 @@ _RE_WARN_FLAGS_STANDALONE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+# GCC/Clang: etiqueta del diagnóstico al final del mensaje, p. ej. [-Wint-conversion]
+# Indica que el compilador emitió un warning concreto (aunque el Makefile no imprima gcc -Wall).
+_RE_DIAGNOSTICO_W = re.compile(r"\[\s*-W[A-Za-z0-9][A-Za-z0-9+=.-]*\s*\]")
+
 
 def contexto_habilita_ub_hints(texto: str, argv_cmd: list[str]) -> bool:
     """
@@ -61,6 +66,8 @@ def contexto_habilita_ub_hints(texto: str, argv_cmd: list[str]) -> bool:
     if _RE_TOOL_VARS.search(texto):
         return True
     if _RE_WARN_FLAGS_STANDALONE.search(blob):
+        return True
+    if _RE_DIAGNOSTICO_W.search(texto):
         return True
 
     return False

@@ -20,6 +20,15 @@ class TestInferirRiesgoUb(unittest.TestCase):
             "moderado",
         )
 
+    def test_moderado_mixed_pointer_integer_patron_c_lang(self) -> None:
+        """Regex de ERRORES_C (también matchea mensajes warning de GCC)."""
+        self.assertEqual(
+            inferir_riesgo_ub_desde_patron(
+                r"makes integer from pointer without a cast|makes pointer from integer without a cast"
+            ),
+            "moderado",
+        )
+
     def test_none_irrelevante(self) -> None:
         self.assertIsNone(
             inferir_riesgo_ub_desde_patron(r"warning:.*unused variable"),

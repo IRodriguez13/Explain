@@ -51,4 +51,14 @@ WARNINGS_JS = {
         "explicacion": "Herramienta no pudo cargar o parsear .map para el bundle.",
         "soluciones": ["Generá maps en build", "Ignorá en prod si no depurás ahí"],
     },
+    r"corepack (warn|WARNING)|Corepack is about to download": {
+        "titulo": "Corepack",
+        "explicacion": "Corepack gestiona pnpm/yarn según packageManager; puede descargar un runtime.",
+        "soluciones": ["Activá corepack explícito", "Fijá versión en package.json"],
+    },
+    r"WARN.*\[turbo\]|turbo.*WARN": {
+        "titulo": "Turborepo warning",
+        "explicacion": "Turbo avisa de caché, pipeline o dependencias entre paquetes.",
+        "soluciones": ["Revisá turbo.json y workspaces", "Documentación del mensaje"],
+    },
 }

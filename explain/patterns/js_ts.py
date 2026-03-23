@@ -281,4 +281,129 @@ ERRORES_JS = {
         "explicacion": "En módulo ESM no existe require(); usá import.",
         "soluciones": ["import/createRequire", '"type": "module" y sintaxis import'],
     },
+    r"TS1005:|TS1003:|TS1127:": {
+        "titulo": "TS1005/1003 — sintaxis TypeScript",
+        "explicacion": "Falta o sobra un token (}, ;, ), etc.) o hay palabra clave mal ubicada.",
+        "soluciones": ["Revisá la línea anterior", "Balanceá genéricos <> y JSX"],
+    },
+    r"TS1128:|TS1109:|TS1068:": {
+        "titulo": "TS1128 — declaración esperada",
+        "explicacion": "El parser encontró algo donde esperaba declaración o fin de bloque.",
+        "soluciones": ["Llaves de más o de menos", "export/import al inicio de módulo"],
+    },
+    r"TS2551:.*Did you mean": {
+        "titulo": "TS2551 — propiedad inexistente (sugerencia)",
+        "explicacion": "tsc sugiere un nombre parecido; suele ser typo.",
+        "soluciones": ["Usá el nombre sugerido", "Revisá el tipo del objeto"],
+    },
+    r"TS2349:|This expression is not callable": {
+        "titulo": "TS2349 — no invocable",
+        "explicacion": "Tratás de llamar () algo que TypeScript no considera función.",
+        "soluciones": ["Union con función vs objeto", "typeof guard", "import default vs named"],
+    },
+    r"TS2538:.*cannot be used as an index type": {
+        "titulo": "TS2538 — índice inválido",
+        "explicacion": "Tipo usado como clave de índice no es válido (p. ej. object sin firma).",
+        "soluciones": ["Record<K,V>", "keyof", "as const + satisfies"],
+    },
+    r"ERR_PNPM_|pnpm:.*ERR_|ERR_SOCKET_TIMEOUT|ECONNREFUSED": {
+        "titulo": "Red / pnpm / conexión",
+        "explicacion": "pnpm o el runtime no pudo resolver red, registry o socket.",
+        "soluciones": ["Proxy y registry en .npmrc", "Firewall", "Verificá URL del registry"],
+    },
+    r"OutOfMemoryError|JavaScript heap out of memory|FATAL ERROR: Reached heap limit": {
+        "titulo": "Memoria heap (Node/V8)",
+        "explicacion": "El proceso se quedó sin memoria para el heap de JS.",
+        "soluciones": ["NODE_OPTIONS=--max-old-space-size=", "Revisá fugas o datasets enormes"],
+    },
+    r"Playwright|Error: browserType\.|Executable doesn't exist": {
+        "titulo": "Playwright / navegador",
+        "explicacion": "Falta instalar browsers de Playwright o la ruta del ejecutable es incorrecta.",
+        "soluciones": ["npx playwright install", "PLAYWRIGHT_BROWSERS_PATH"],
+    },
+    r"TS18048:": {
+        "titulo": "TS18048 — posible undefined",
+        "explicacion": "strictNullChecks: el valor puede ser undefined y se usa sin comprobar (código distinto a TS2532 en versiones recientes).",
+        "soluciones": ["if (x !== undefined)", "x?.", "valor por defecto con ??"],
+    },
+    r"TS18047:": {
+        "titulo": "TS18047 — posible null",
+        "explicacion": "strictNullChecks: puede ser null y se accede sin narrow.",
+        "soluciones": ["if (x != null)", "Optional chaining", "Non-null assertion solo con invariante"],
+    },
+    r"TS2353:|Object literal may only specify known properties": {
+        "titulo": "TS2353 — propiedad extra en literal",
+        "explicacion": "El objeto literal tiene claves que el tipo destino no declara (excess property check).",
+        "soluciones": ["Eliminá la propiedad", "Ampliá el tipo o usá índice con firma", "as const + satisfies con criterio"],
+    },
+    r"TS2344:|does not satisfy the constraint": {
+        "titulo": "TS2344 — restricción genérica",
+        "explicacion": "El argumento de tipo no cumple el `extends` / `where` del parámetro genérico.",
+        "soluciones": ["Pasá un tipo que implemente la restricción", "Aflojá la restricción si es correcto"],
+    },
+    r"TS2300:|Duplicate identifier": {
+        "titulo": "TS2300 — identificador duplicado",
+        "explicacion": "Dos declaraciones con el mismo nombre en el mismo ámbito (import, let, type, etc.).",
+        "soluciones": ["Renombrá uno", "Revisá imports duplicados o merge mal resuelto"],
+    },
+    r"TS2739:|Type .* is missing the following properties": {
+        "titulo": "TS2739 — faltan propiedades",
+        "explicacion": "El objeto no incluye todas las propiedades requeridas del tipo.",
+        "soluciones": ["Completá el literal", "Hacé opcionales con ?", "Partial<T> si aplica"],
+    },
+    r"TS2740:": {
+        "titulo": "TS2740 — tipo vacío vs requerido",
+        "explicacion": "Asignás {} o un tipo sin miembros donde se esperan muchas propiedades.",
+        "soluciones": ["Construí el objeto con todas las keys", "Record o tipo más laxo"],
+    },
+    r"TS7016:|Could not find a declaration file": {
+        "titulo": "TS7016 — sin tipos (.d.ts)",
+        "explicacion": "Paquete JS sin @types o sin types en package.json.",
+        "soluciones": ["npm i -D @types/paquete", "declare module 'x'", "skipLibCheck temporal"],
+    },
+    r"TS7030:|Not all code paths return a value": {
+        "titulo": "TS7030 — return faltante",
+        "explicacion": "Función con tipo de retorno distinto de void/undefined y algún camino no retorna.",
+        "soluciones": ["return en cada rama", "throw en imposibles", "cambiar retorno a void"],
+    },
+    r"TS2448:": {
+        "titulo": "TS2448 — uso antes de declarar",
+        "explicacion": "Referenciás let/const/class antes de su declaración (temporal dead zone).",
+        "soluciones": ["Reordená el código", "function hoisting si aplica"],
+    },
+    r"TS2454:": {
+        "titulo": "TS2454 — variable sin asignar",
+        "explicacion": "Usás una variable antes de que TypeScript vea asignación en todos los caminos.",
+        "soluciones": ["Inicializá al declarar", "asigná en todas las ramas"],
+    },
+    r"TS2571:|Object is of type 'unknown'": {
+        "titulo": "TS2571 — unknown en operación",
+        "explicacion": "Operás sobre unknown (distinto de TS18046 que marca el acceso directo).",
+        "soluciones": ["typeof / instanceof", "Zod/schema", "as unknown as T solo con criterio"],
+    },
+    r"TS2326:|Types of property.*are incompatible": {
+        "titulo": "TS2326 — propiedad incompatible",
+        "explicacion": "Asignación entre objetos: una propiedad del mismo nombre tiene tipos incompatibles.",
+        "soluciones": ["Alineá tipos de la propiedad", "Union o genérico más preciso"],
+    },
+    r"TS2367:|This comparison appears to be unintentional": {
+        "titulo": "TS2367 — comparación inútil",
+        "explicacion": "Comparás tipos que nunca pueden ser iguales (p. ej. literal distintos sin overlap).",
+        "soluciones": ["Corregí la condición", "Unión de tipos coherente", "type guard real"],
+    },
+    r"TS2686:|React refers to a UMD global": {
+        "titulo": "TS2686 — React UMD global",
+        "explicacion": "jsx/react sin import explícito y tsconfig no usa la fábrica automática nueva.",
+        "soluciones": ["import React from 'react' (jsx clásico)", "jsx: react-jsx y sin import React"],
+    },
+    r"TS6192:|All imports in import declaration are unused": {
+        "titulo": "TS6192 — imports sin usar",
+        "explicacion": "noUnusedLocals: todos los símbolos del import están sin referencia.",
+        "soluciones": ["Eliminá el import", "Usá el símbolo", "prefijo _ si es intencional"],
+    },
+    r"TS6196:|declared but never used": {
+        "titulo": "TS6196 — declarado sin usar",
+        "explicacion": "Variable, parámetro o función no usada con noUnusedLocals/noUnusedParameters.",
+        "soluciones": ["Eliminá o usá", "prefijo _ en parámetros", "ajustá tsconfig si es ruido"],
+    },
 }

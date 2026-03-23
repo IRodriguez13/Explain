@@ -9,7 +9,7 @@ WARNINGS_RUST = {
     r"warning: unused import:": {
         "titulo": "Import no usado",
         "explicacion": "Un use está de más.",
-        "soluciones": ["Elimínalo o permite dead_code solo si es macro/generated."],
+        "soluciones": ["Elimínalo", "#[allow(unused_imports)] solo si macro/generated"],
     },
     r"warning: unused.*must be used": {
         "titulo": "Valor #[must_use] ignorado",
@@ -41,14 +41,19 @@ WARNINGS_RUST = {
         "explicacion": "Rust 2018+ prefiere Box<dyn Trait> en lugar de Box<Trait>.",
         "soluciones": ["Añade dyn delante del trait."],
     },
-    r"warning: unused import:": {
-        "titulo": "Import no usado (rustc)",
-        "explicacion": "Un use no se referencia en el módulo.",
-        "soluciones": ["Elimínalo", "#[allow(unused_imports)] solo si macro/generated"],
-    },
     r"warning: unreachable pattern": {
         "titulo": "Patrón inalcanzable en match",
         "explicacion": "Un arm de match nunca se ejecuta porque otro lo cubre antes.",
         "soluciones": ["Reordená arms", "Eliminá el patrón muerto"],
+    },
+    r"warning:.*dead_code": {
+        "titulo": "dead_code",
+        "explicacion": "Función, variable o módulo no usado (o solo usado en tests).",
+        "soluciones": ["Eliminá código muerto", "#[allow(dead_code)] con criterio", "pub(crate) si es API interna"],
+    },
+    r"warning: unused assignment": {
+        "titulo": "Asignación no usada",
+        "explicacion": "Se asigna un valor que luego se sobrescribe sin leerse.",
+        "soluciones": ["Eliminá la asignación intermedia", "Revisá la lógica"],
     },
 }
