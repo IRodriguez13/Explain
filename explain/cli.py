@@ -746,6 +746,15 @@ _INTRO_WARNINGS_SIN_PATRON_LARGO = (
     "Cada bloque muestra el mensaje tal cual lo emitió el compilador."
 )
 
+_MSJ_SIN_DIAGNOSTICOS_EXPLICABLES = (
+    "Nada que explicar en esta salida: no hay errores ni advertencias reconocidos por la base, "
+    "ni advertencias sin patrón, ni candidatos en «Desconocidos» (heurística de feedback).\n"
+    "\n"
+    "Eso suele coincidir con un build limpio respecto de lo que explain puede ver, pero no "
+    "reemplaza al código de salida del comando ni a otras herramientas: solo analiza texto "
+    "contra regex en explain/patterns/."
+)
+
 
 _LANGS_UB_HINTS = frozenset({"C", "C++", "Assembly"})
 
@@ -885,6 +894,7 @@ def formatear_salida(
     ub_hints_sin_contexto: bool = False,
     ub_hints_pedido: bool = False,
     ub_hints_idioma_no_soportado: bool = False,
+    advertencias_omitidas_nw: bool = False,
 ) -> str:
     out: list[str] = []
     sep = "━" * 60
@@ -924,8 +934,26 @@ def formatear_salida(
             )
             out.append(f"  {linea_cruda_sin_patron}")
             out.append("")
-        out.append(
-            "No se encontraron patrones conocidos. Reforzá explain/patterns/ del lenguaje o usá -v para ver todo el log."
+            out.append(
+                "No se encontraron patrones conocidos. Reforzá explain/patterns/ del lenguaje o usá -v para ver todo el log."
+            )
+        else:
+            out.append(_MSJ_SIN_DIAGNOSTICOS_EXPLICABLES)
+            if advertencias_omitidas_nw:
+                out.append("")
+                out.append(
+                    "Nota: usaste -nw / --no-warnings: no se rastrearon líneas con «warning» en el log "
+                    "para advertencias fuera de la base; el resumen puede mostrar «todo vacío» aunque el "
+                    "compilador hubiera advertido algo."
+                )
+        _append_ub_hints_al_pie(
+            out,
+            lenguaje=lenguaje,
+            ub_hints_pedido=ub_hints_pedido,
+            ub_hints_sin_contexto=ub_hints_sin_contexto,
+            ub_hints=ub_hints,
+            n_ub_items=len(ub_items),
+            compacto=compacto,
         )
         return "\n".join(out) + "\n"
 
@@ -1086,6 +1114,7 @@ def formatear_conteo(
     ub_hints: bool = False,
     ub_hints_sin_contexto: bool = False,
     ub_hints_idioma_no_soportado: bool = False,
+    advertencias_omitidas_nw: bool = False,
 ) -> str:
     """Salida mínima solo con conteos (útil para scripts y CI)."""
     total_exp = n_errores + n_warns_patron
@@ -1097,6 +1126,17 @@ def formatear_conteo(
         f"desconocidos: {n_desconocidos}",
         f"total explicados (err+adv): {total_exp}",
     ]
+    if (
+        n_errores == 0
+        and n_warns_patron == 0
+        and n_warns_lineas == 0
+        and n_desconocidos == 0
+    ):
+        lines.append(
+            "sin diagnósticos listados por explain (criterio anterior); no implica por sí solo éxito del build"
+        )
+        if advertencias_omitidas_nw:
+            lines.append("(-nw: advertencias no rastreadas en el log para esta pasada)")
     if ub_hints_idioma_no_soportado:
         lines.append("ub-hints: no aplica (solo C, C++ y Assembly)")
     elif ub_hints_sin_contexto:
@@ -1609,6 +1649,7 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
                 ub_hints=ub_effective,
                 ub_hints_sin_contexto=ub_hints_sin_contexto,
                 ub_hints_idioma_no_soportado=ub_hints_idioma_no_soportado,
+                advertencias_omitidas_nw=not incluir_warnings,
             ).rstrip("\n"),
         )
     else:
@@ -1630,6 +1671,7 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
                 ub_hints_sin_contexto=ub_hints_sin_contexto,
                 ub_hints_pedido=ub_hints_pedido_pie,
                 ub_hints_idioma_no_soportado=ub_hints_idioma_no_soportado,
+                advertencias_omitidas_nw=not incluir_warnings,
             ).rstrip("\n"),
         )
 

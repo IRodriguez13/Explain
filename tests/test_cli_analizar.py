@@ -48,6 +48,32 @@ class TestAnalizar(unittest.TestCase):
         for e in err:
             self.assertIsNone(e.get("riesgo_ub"))
 
+    def test_formatear_salida_sin_diagnosticos_explicables(self) -> None:
+        out = formatear_salida(
+            [],
+            [],
+            [],
+            "C",
+            max_warnings=5,
+            compacto=True,
+        )
+        self.assertIn("Nada que explicar en esta salida", out)
+
+    def test_formatear_conteo_todo_cero_linea_explicita(self) -> None:
+        cnt = formatear_conteo("Rust", 0, 0, 0, 0)
+        self.assertIn("sin diagnósticos listados por explain", cnt)
+
+    def test_formatear_conteo_nw_notifica_omision(self) -> None:
+        cnt = formatear_conteo(
+            "C",
+            0,
+            0,
+            0,
+            0,
+            advertencias_omitidas_nw=True,
+        )
+        self.assertIn("-nw:", cnt)
+
     def test_formato_ub_hints_idioma_no_soportado(self) -> None:
         out = formatear_salida(
             [],

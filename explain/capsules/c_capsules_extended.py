@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from explain.capsules.c_capsules_gap import CAPSULES_C_GAP
+from explain.capsules.linker_capsules_textual import CAPSULES_LINKER_TEXTUAL
 from explain.capsules.support_extension_capsules import (
     CAPSULES_SUPPORT_C,
     CAPSULES_SUPPORT_C_WARN,
@@ -190,6 +191,54 @@ x.y = 1;""",
 s.y = 1;""",
         "que_paso": "Usás `.` o `->` sobre un valor que no es struct/union (o confundís `*` con `->`).",
         "regla": "Si es puntero usá `->`; verificá tipo real tras casts y typedefs.",
+    },
+    r"is a pointer.*did you mean.*->|did you mean to use .->": {
+        "codigo_incorrecto": """struct Opts { int verbose; };
+void f(struct Opts *opts) {
+    int v = opts.verbose;  /* opts es puntero */
+}""",
+        "codigo_correcto": """struct Opts { int verbose; };
+void f(struct Opts *opts) {
+    int v = opts->verbose;  /* o (*opts).verbose */
+}""",
+        "que_paso": "Usaste `.` sobre un puntero: en C, `->` combina desreferencia y acceso a miembro.",
+        "regla": "Puntero → `p->campo`; struct por valor → `s.campo`.",
+    },
+    r"is not a pointer.*did you mean.*\.|not a pointer; did you mean to use '\.'|member reference type.*is not a pointer": {
+        "codigo_incorrecto": """struct Opts { int verbose; };
+void f(struct Opts opts) {
+    int v = opts->verbose;  /* opts es struct por valor */
+}""",
+        "codigo_correcto": """struct Opts { int verbose; };
+void f(struct Opts opts) {
+    int v = opts.verbose;
+}""",
+        "que_paso": "Usaste `->` sobre un struct por valor: `->` es solo para punteros.",
+        "regla": "Valor struct → `.campo`; puntero → `->` o `(*p).campo`.",
+    },
+    r"invalid initializer": {
+        "codigo_incorrecto": """int bad = \"texto\";""",
+        "codigo_correcto": """int ok = 0;""",
+        "que_paso": "El valor o la forma de `{}` no coincide con el tipo del objeto (mezcla de tipos o llaves incorrectas).",
+        "regla": "Alineá tipo a la derecha; en structs usá lista o designadores `.campo =` coherentes.",
+    },
+    r"lvalue required as increment operand|wrong type argument to increment|operand of.*must be a modifiable lvalue": {
+        "codigo_incorrecto": """const int c = 1;
+c++;""",
+        "codigo_correcto": """int n = 1;
+n++;""",
+        "que_paso": "++/-- requieren un lvalue modificable; `const` y muchas expresiones compuestas no sirven.",
+        "regla": "Quitá `const` si debe mutarse, o usá una variable intermedia no const.",
+    },
+    r"array subscript is not an integer": {
+        "codigo_incorrecto": """double d = 1.5;
+int a[4];
+int x = a[d];""",
+        "codigo_correcto": """size_t i = 2;
+int a[4];
+int x = a[i];""",
+        "que_paso": "El índice entre `[` `]` debe ser entero; un float o puntero equivocado dispara el error.",
+        "regla": "Usá `size_t`/`int` según API; explicitá casts si es seguro.",
     },
     r"assignment .* makes pointer from integer": {
         "codigo_incorrecto": """int *p = 10;""",
@@ -565,6 +614,7 @@ typedef long foo_t;""",
         "que_paso": "Conversión implícita que puede cambiar valor o representación.",
         "regla": "Cast explícito o sufijos `f`/`u`/`L` adecuados; revisá fronteras numéricas.",
     },
+    **CAPSULES_LINKER_TEXTUAL,
     **CAPSULES_SUPPORT_C,
     **CAPSULES_SUPPORT_C_WARN,
     **CAPSULES_C_GAP,

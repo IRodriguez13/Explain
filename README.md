@@ -84,6 +84,8 @@ make dev
 source .venv/bin/activate
 ```
 
+**Objetivos Make (desarrollo interno):** `make` o `make help` listan `dev`, `venv`, `install-editable`, `completions` y `test`.
+
 `make dev` crea `.venv`, instala el paquete en modo editable y ejecuta **`explain --install-shell-completions`**, que copia bash/zsh/fish a `~/.local/share/bash-completion/`, `~/.zsh/completions/` y `~/.config/fish/completions/`. Abrí una terminal nueva o `source ~/.local/share/bash-completion/completions/explain` (bash).
 
 **Sin Makefile:** `python3 -m venv .venv && .venv/bin/pip install -e . && .venv/bin/explain --install-shell-completions`
@@ -291,7 +293,7 @@ explain/           # paquete Python
   shell_completions.py  # --install-shell-completions (bash/zsh/fish → home)
   capsules/        # --man: c_lang, c_capsules_*, asm_lang, cpp_capsules, rust_capsules, handwritten_extra, *_priority, man_coverage_bulk, support_extension_capsules, etc.
   patterns/        # errores, *_warnings.py, *_frameworks.py, assembly*.py (x86/ARM)
-Makefile           # make dev → venv + pip install -e . + install completions
+Makefile           # make / make help → ayuda; make dev → venv + pip install -e . + completions
 .envrc             # opcional: direnv (PATH .venv + source completions en bash)
 docs/              # CLI.md — ejemplos y salidas esperadas
 tests/             # unittest (UB, analizar, --man, snippets, --help/--version)

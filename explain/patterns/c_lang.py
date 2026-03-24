@@ -107,6 +107,31 @@ ERRORES_C = {
         "explicacion": "Usás `.` o `->` sobre algo que no es struct (ej. puntero mal o tipo equivocado).",
         "soluciones": ["Revisá * vs ->", "Tipo real del puntero"],
     },
+    r"is a pointer.*did you mean.*->|did you mean to use .->": {
+        "titulo": "Puntero con `.` en lugar de `->`",
+        "explicacion": "El operando es un puntero a struct/union: el compilador sugiere `->` en vez de `.` para acceder a un miembro.",
+        "soluciones": ["Cambiá `p.campo` por `p->campo`", "O desreferenciá: `(*p).campo`"],
+    },
+    r"is not a pointer.*did you mean.*\.|not a pointer; did you mean to use '\.'|member reference type.*is not a pointer": {
+        "titulo": "Struct por valor con `->` en lugar de `.`",
+        "explicacion": "El operando es un struct/union por valor (no puntero): hay que usar `.` o tomar dirección y entonces `->`.",
+        "soluciones": ["`s.campo` en lugar de `s->campo`", "Si necesitás puntero: `(&s)->campo`"],
+    },
+    r"invalid initializer": {
+        "titulo": "Inicializador inválido",
+        "explicacion": "La forma del inicializador no encaja con el tipo (llaves, tipos, orden de campos).",
+        "soluciones": ["Revisá tipos en `=` y en `{}`", "Designadores `.campo =` en C99", "Cast solo si es deliberado"],
+    },
+    r"lvalue required as increment operand|wrong type argument to increment|operand of.*must be a modifiable lvalue": {
+        "titulo": "++/-- sobre no modificable",
+        "explicacion": "Solo podés incrementar/decrementar un lvalue modificable (variable, `*p`, `a[i]` con `p`/`a` modificables), no literales ni expresiones const.",
+        "soluciones": ["Usá variable intermedia", "No hagas `i++` sobre resultado de función", "Quita const si debe mutarse"],
+    },
+    r"array subscript is not an integer": {
+        "titulo": "Índice de array no entero",
+        "explicacion": "El subíndice `a[i]` debe ser entero (o enum en C); pasaste puntero, float u otro tipo.",
+        "soluciones": ["Cast a entero con criterio", "Corregí el tipo de la variable índice"],
+    },
     r"lvalue required as|lvalue required": {
         "titulo": "Falta un lvalue",
         "explicacion": "Asignás o tomás dirección de una expresión que no es modificable.",
@@ -301,6 +326,66 @@ ERRORES_C = {
         "titulo": "Enlazado falló (ld / collect2)",
         "explicacion": "La fase de enlace terminó mal; el motivo concreto suele estar unas líneas arriba.",
         "soluciones": ["undefined reference / multiple definition", "Orden y flags -l", "LDFLAGS y rpath"],
+    },
+    r"ld: cannot find (-l|lib)|/usr/bin/ld: cannot find (-l|lib)": {
+        "titulo": "Linker: biblioteca no encontrada",
+        "explicacion": "No se resolvió `-l…` o la ruta a una biblioteca compartida/estática.",
+        "soluciones": ["Paquetes -dev", "pkg-config --libs", "-L y orden de -l"],
+    },
+    r"ld: skipping incompatible.*when searching for|/usr/bin/ld: skipping incompatible": {
+        "titulo": "Linker: biblioteca incompatible",
+        "explicacion": "Hay un `.so`/`.a` con arquitectura o ABI distinta al enlace actual.",
+        "soluciones": ["Build para el target correcto", "Limpiar artefactos cruzados"],
+    },
+    r"relocation R_[A-Za-z0-9_]+.*(overflow|truncated)|ld:.*relocation.*overflow|cannot relocate": {
+        "titulo": "Linker: relocalización",
+        "explicacion": "Una relocalización no cabe o es inválida para el modelo de código (PIC, distancia, etc.).",
+        "soluciones": ["-fPIC coherente", "-mcmodel", "mismo ABI en todos los .o"],
+    },
+    r"DSO missing from command line|cannot load needed shared.*not found|needed by.*\.so": {
+        "titulo": "Linker: dependencia de .so",
+        "explicacion": "Falta una biblioteca compartida requerida por otra en el grafo de enlace/carga.",
+        "soluciones": ["Añadir -l explícitos", "rpath/runpath según política"],
+    },
+    r"ld:.*unrecognized option|ld\.bfd: unrecognized option|unrecognized option.*-Wl": {
+        "titulo": "Linker: opción no reconocida",
+        "explicacion": "Flag de linker mal pasado o no soportado por esa versión de ld/lld/mold.",
+        "soluciones": ["Revisar -Wl,", "Documentación del backend de enlace"],
+    },
+    r"ld: cannot open output file|ld: cannot open .*: Permission denied|cannot open output file.*Permission denied": {
+        "titulo": "Linker: salida no escribible",
+        "explicacion": "No se pudo crear o abrir el archivo de salida del enlace.",
+        "soluciones": ["Permisos y ruta -o", "Espacio en disco"],
+    },
+    r"attempted static link of dynamic object|dynamic executable.*not allowed": {
+        "titulo": "Linker: estático vs dinámico",
+        "explicacion": "Mezcla inválida entre enlace estático y objetos que solo existen como compartidos.",
+        "soluciones": ["Quitar -static parcial", "Usar .a donde exista"],
+    },
+    r"hidden symbol.*referenced|undefined reference.*hidden symbol": {
+        "titulo": "Linker: símbolo oculto",
+        "explicacion": "Visibilidad del símbolo impide resolver la referencia entre unidades o DSO.",
+        "soluciones": ["Atributos visibility", "Mapas de versión"],
+    },
+    r"version `[^']*' not found|version node not found|not found \(required by": {
+        "titulo": "Linker / loader: versión de símbolo",
+        "explicacion": "Se exige una versión de GLIBC/GLIBCXX u otra versión de símbolo que no está en el entorno de enlace o ejecución.",
+        "soluciones": ["Sysroot o imagen con la libc correcta", "Enlazar contra libs del destino"],
+    },
+    r"(ld\.lld|lld): error:|mold: (error|fatal):|gold: error:": {
+        "titulo": "Linker alternativo (lld/mold/gold)",
+        "explicacion": "lld, mold o gold emitieron un error explícito (además del mensaje vecino en el log).",
+        "soluciones": ["Contexto en líneas adyacentes", "Probar ld.bfd para comparar"],
+    },
+    r"ld:.*file format not recognized|is not a recognized object file": {
+        "titulo": "Linker: formato de objeto inválido",
+        "explicacion": "El archivo no es un objeto reconocido por el linker (corrupto, texto u otro target).",
+        "soluciones": ["Regenerar .o/.a", "No mezclar arquitecturas"],
+    },
+    r"discarded input section|undefined reference to linker script|memory region.*overflow": {
+        "titulo": "Linker script / GC de secciones",
+        "explicacion": "Sección descartada aún referenciada, script `.ld` o región de memoria desbordada (típico en embebido).",
+        "soluciones": ["KEEP() y ENTRY", "Tamaños FLASH/RAM en el script"],
     },
     r"cannot compute sizeof|invalid application of 'sizeof'": {
         "titulo": "sizeof inválido",
